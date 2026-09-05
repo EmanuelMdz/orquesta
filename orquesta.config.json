@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "astraModel": "gpt-6-astra",
+  "opusModel": "opus",
+  "workers": 2,
+  "maxCorrections": 2,
+  "maxQuestions": 3,
+  "maxCalls": 40,
+  "timeoutMs": 300000,
+  "maxContextBytes": 160000,
+  "qaRoot": "test/orquesta",
+  "qaCommand": ["node", "--test"],
+  "checks": []
+}

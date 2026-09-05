@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>Orquesta · Agentes en vivo</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header class="topbar"><a class="brand" href="/" aria-label="Orquesta"><span class="logo">o</span>orquesta<span class="version">LOCAL / 0.1</span></a><div class="top-right"><span id="mode" class="mode">Conectando</span><span id="connection" class="connection">● Conectando</span></div></header>
+<div id="error" class="error" role="alert" hidden></div>
+<section class="workspace-bar"><div><span class="eyebrow">PROYECTO</span><div id="repo" class="repo">Cargando…</div></div><label class="run-picker">Ejecución<select id="run-select" aria-label="Elegir ejecución"><option>Sin ejecuciones</option></select></label></section>
+<section class="new-work"><form id="start-form"><label for="objective">¿Qué querés construir?</label><div class="input-row"><textarea id="objective" rows="2" placeholder="Describí el cambio y cómo debería funcionar…" required maxlength="20000"></textarea><button id="start" type="submit" class="primary">Iniciar equipo →</button></div></form></section>
+<section class="run-heading"><div><span class="eyebrow" id="run-label">TU EQUIPO DE DESARROLLO</span><h1 id="goal">Todo listo para empezar</h1><div id="run-status" class="muted">Astra planifica y revisa. Opus implementa.</div></div><div class="controls"><button id="pause" type="button" disabled>Pausar</button><button id="resume" type="button" hidden>Reanudar →</button></div></section>
+<section id="question-box" class="question-box" hidden><span class="eyebrow">ASTRA NECESITA TU RESPUESTA</span><p id="question-text"></p><form id="answer-form"><label for="answer">Tu decisión</label><div class="input-row"><textarea id="answer" rows="2" required maxlength="20000"></textarea><button class="primary" type="submit">Responder</button></div></form></section>
+<div class="workspace"><aside class="sidebar"><div class="sidebar-title"><span>EQUIPO</span><span id="team-count">Astra + Opus</span></div><div id="agents"></div><div class="selected-detail" id="agent-detail">Seleccioná una tarea para ver su actividad.</div></aside>
+<main><nav class="tabs" role="tablist" aria-label="Inspeccionar trabajo"><button id="tab-activity" type="button" role="tab" aria-controls="activity" aria-selected="true" data-tab="activity">Comunicación</button><button id="tab-changes" type="button" role="tab" aria-controls="changes" aria-selected="false" data-tab="changes">Cambios</button><button id="tab-tests" type="button" role="tab" aria-controls="tests" aria-selected="false" data-tab="tests">Pruebas</button></nav>
+<section id="activity" role="tabpanel" aria-labelledby="tab-activity"><div id="feed" class="feed"><div class="empty">Acá vas a ver asignaciones, consultas de Opus, decisiones de Astra y entregas.</div></div></section>
+<section id="changes" class="content-panel" role="tabpanel" aria-labelledby="tab-changes" hidden><div class="panel-title">Diferencias de código <span id="diff-scope" class="muted"></span></div><pre id="diff" class="code">Todavía no hay cambios.</pre></section>
+<section id="tests" class="content-panel" role="tabpanel" aria-labelledby="tab-tests" hidden><div class="panel-title">Pruebas ejecutadas por Orquesta, dirigidas por Astra</div><div id="test-results" class="test-results"></div></section>
+</main></div>
+<footer><span id="summary" aria-live="polite">Estado persistido localmente</span><span id="branch">Sin publicación automática</span></footer>
+</body></html>

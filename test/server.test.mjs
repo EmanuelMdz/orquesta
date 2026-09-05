@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync,rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Engine } from '../dist/engine.js';
+import { createDemo } from '../dist/demo.js';
+import { defaults } from '../dist/config.js';
+import { DemoProvider } from '../dist/providers.js';
+import { startServer } from '../dist/server.js';
+test('local API authenticates requests and streams actual engine events',async t=>{
+  const root=mkdtempSync(join(tmpdir(),'orq-http-'));const repo=await createDemo(root);const engine=new Engine(repo,defaults,new DemoProvider(1));const server=await startServer(engine,{demo:true});
+  t.after(async()=>{await server.close();await engine.close();rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:200});});
+  const headers={Authorization:'Bearer '+server.token};
+  assert.equal((await fetch(server.origin+'/api/state')).status,401);
+  assert.equal((await fetch(server.origin+'/api/state',{headers:{...headers,Origin:'https://untrusted.example'}})).status,403);
+  const html=await(await fetch(server.origin)).text();assert.match(html,/Comunicación/);assert.match(html,/Pruebas/);
+  const controller=new AbortController();const response=await fetch(server.origin+'/api/stream',{headers,signal:controller.signal});assert.equal(response.status,200);const reader=response.body.getReader();await reader.read();
+  const run=await engine.create('http demo','demo');const chunk=await reader.read();assert.match(new TextDecoder().decode(chunk.value),/run.created/);controller.abort();
+  const state=await(await fetch(server.origin+'/api/state',{headers})).json();assert.equal(state.runs[0].id,run.id);assert.equal(state.demo,true);
+  const events=await(await fetch(server.origin+'/api/events?run='+run.id,{headers})).json();assert.equal(events[0].type,'run.created');
+  assert.equal((await fetch(server.origin+'/api/runs',{method:'POST',headers,body:'{}'})).status,415);
+});

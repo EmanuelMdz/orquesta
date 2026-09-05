@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.orquesta/
+*.tgz
+*.log
+.env
+.env.*
+!*.example
