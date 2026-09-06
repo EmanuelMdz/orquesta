@@ -1,0 +1,32 @@
+# Orquesta
+
+> Orquestador local de agentes para Codex y Claude Code. Equipos configurables,
+> combos personales y un panel local para seguir decisiones, cambios y pruebas.
+
+Repositorio: https://github.com/EmanuelMdz/orquesta
+Versión de instalación documentada: v0.2.0
+
+## Instalar
+
+- [Instrucciones para el agente](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/INSTALL.md): requisitos, instalación global, verificación y actualización. Empezar por este archivo si el usuario pidió instalar.
+- [Portada](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/README.md): propuesta, texto para copiar y comandos de inicio.
+
+## Usar y configurar
+
+- [Guía de uso](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/docs/USAGE.md): comandos, configuración por proyecto, combos y pruebas.
+- [Skill](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/integrations/orquestar/SKILL.md): flujo del asistente conversacional instalado.
+
+## Desarrollar
+
+- [Arquitectura](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/docs/ARCHITECTURE.md): motor, proveedores, worktrees, decisiones y QA.
+- [Validación](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/docs/VALIDATION.md): pruebas realizadas y sus límites.
+- [Instrucciones del repositorio](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/AGENTS.md): reglas para cambios al código fuente.
+
+## Contexto esencial
+
+El director planifica, resuelve dudas, escribe QA independiente y revisa.
+Los implementadores proponen archivos dentro del alcance de su tarea.
+El combo inicial es Astra como director y Opus como implementador; ambos roles
+permiten elegir proveedor y modelo. No sustituir modelos silenciosamente.
+Las ejecuciones reales consumen uso de las cuentas de los proveedores.
+Instalar Orquesta no autoriza iniciar una tarea ni cambiar el repositorio activo.

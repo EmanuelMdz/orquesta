@@ -1,137 +1,166 @@
-# Orquesta
+<p align="center">
+  <img src="docs/assets/orquesta-banner.svg" alt="Orquesta. Tu equipo de agentes. Tu forma de trabajar. Un director planifica y revisa; los implementadores escriben el código." width="1200">
+</p>
 
-Elegí un equipo de agentes, escribí una tarea y miralos trabajar. Podés abrir el asistente desde el chat de **Codex** o **Claude Code**, o desde una terminal normal.
+<p align="center">
+  <a href="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml"><img src="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml/badge.svg" alt="Checks en Windows y Linux"></a>
+  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.0"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.0-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.0"></a>
+  <a href="#requisitos"><img src="https://img.shields.io/badge/Node.js-%E2%89%A5%2022.13-88d2b1?style=flat-square&amp;labelColor=171a20" alt="Node.js 22.13 o superior"></a>
+</p>
 
-El combo inicial usa **Astra para planificar, resolver dudas, crear pruebas y revisar**, y **Opus para implementar**. Podés cambiar los proveedores, modelos y cantidad de implementadores, y guardar tus propios combos.
+<p align="center">
+  <strong>Elegí quién dirige. Elegí quién implementa. Mirá al equipo trabajar.</strong><br>
+  Desde Codex, Claude Code o tu terminal. Con configuración por proyecto y combos reutilizables.
+</p>
 
-## Instalar una vez
+<p align="center">
+  <a href="#instalar-con-tu-agente"><strong>Copiar para tu agente ↓</strong></a> ·
+  <a href="#instalar-con-un-comando">Instalar con un comando</a> ·
+  <a href="#ver-a-los-agentes">Ver a los agentes</a> ·
+  <a href="docs/USAGE.md">Guía completa</a>
+</p>
 
-Requisitos: Node.js 22.13 o superior y Git. Cada proveedor que uses necesita su CLI oficial instalada, sesión iniciada y acceso al modelo elegido. En Windows también se detectan las CLI de las extensiones de VS Code. Las ejecuciones reales consumen el uso de tus cuentas.
+---
 
-```powershell
+## Instalar con tu agente
+
+**Copiá este bloque con el botón ⧉ de su esquina superior derecha** y pegalo en el chat de Codex o Claude Code. También podés pasarle directamente [el enlace del repositorio](https://github.com/EmanuelMdz/orquesta) y pedirle que siga `INSTALL.md`.
+
+```text
+Instalá Orquesta para usarla desde Codex y Claude Code en todos mis proyectos.
+Repositorio: https://github.com/EmanuelMdz/orquesta
+Leé y seguí: https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/INSTALL.md
+
+Si ya está instalada, comprobá la versión y las skills antes de actualizar.
+Verificá las conexiones disponibles sin cambiar mis modelos ni permisos.
+Al terminar, indicame cómo abrir el asistente en este proyecto.
+No inicies agentes ni modifiques el proyecto durante la instalación.
+```
+
+[Instrucciones de instalación para el agente →](INSTALL.md) · [Índice de documentación en texto plano →](llms.txt)
+
+## Instalar con un comando
+
+En una terminal:
+
+```sh
 npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.0 orquesta install
 ```
 
-El instalador prepara el paquete, lo instala globalmente e instala la skill `orquestar` para ambos clientes. No necesitás copiar nada dentro de tus proyectos. Si el repositorio es privado, necesitás acceso y autenticación de GitHub para instalarlo.
+Se instala **una vez para tu usuario**, con el asistente disponible en todos tus proyectos. No hace falta clonar Orquesta dentro de cada repo. Repetí el comando para reinstalar esta versión.
 
-También podés pasarle el enlace de este repo a Codex o Claude y pedirle: **«Instalá Orquesta para usarla en todos mis proyectos»**. Las instrucciones para ese agente están en [INSTALL.md](INSTALL.md).
+### Requisitos
 
-Si tu npm omite los scripts de instalación, ejecutá `orquesta install` después. Para comprobar las CLI: `orquesta doctor`. Si PowerShell bloquea scripts `.ps1`, usá `npm.cmd` y `orquesta.cmd`.
+- **Node.js ≥22.13, npm y Git.**
+- La CLI oficial de cada proveedor que elijas, con sesión iniciada y acceso al modelo. Las cuentas y las CLI de los proveedores se configuran por separado; `orquesta doctor` comprueba las conexiones.
+- Para iniciar una tarea: un repositorio Git con al menos un commit y sin cambios pendientes. Podés configurar el equipo antes de dejarlo limpio.
 
-## Desde el chat de un proyecto
+Las llamadas reales usan las cuentas de tus proveedores y consumen su uso. El panel corre en tu equipo; las solicitudes a los modelos se envían a sus servicios.
 
-En **Claude Code**, escribí:
+<details>
+<summary>Windows, comprobaciones y solución de problemas</summary>
 
-```text
-/orquestar
+Si PowerShell bloquea scripts `.ps1`, usá `npx.cmd` y `orquesta.cmd`. En Windows también se detectan las CLI incluidas en extensiones compatibles de VS Code.
+
+```sh
+orquesta --version
+orquesta doctor
+orquesta install
 ```
 
-En **Codex**, escribí:
+El último comando vuelve a registrar las skills. Reabrí el chat si todavía no aparecen. Si falta un proveedor, podés configurar un equipo con el que sí esté disponible; Orquesta no sustituye modelos automáticamente.
 
-```text
-$orquestar
+</details>
+
+## Abrilo en cualquier proyecto
+
+Abrí el chat o la terminal **dentro del repositorio donde querés trabajar**:
+
+| Dónde estás | Qué escribís |
+| --- | --- |
+| Chat de **Codex** | `$orquestar` — también disponible en `/skills` |
+| Chat de **Claude Code** | `/orquestar` |
+| **Terminal** normal | `orquesta` |
+
+El asistente te guía para **elegir equipo → ajustar implementadores → escribir tarea → confirmar**. El menú del chat usa las preguntas que permite cada cliente; el panel visual se abre en el navegador.
+
+Podés usar el combo inicial **Astra + Opus**, elegir uno guardado o crear el tuyo:
+
+| Rol | Combo inicial | Responsabilidad |
+| --- | --- | --- |
+| Director | Astra, desde Codex | Plan, decisiones, pruebas de aceptación y revisión |
+| Implementadores | Opus, desde Claude Code | Escribir código y consultar dudas al director |
+| Vos | Desde el chat o el panel | Definir la tarea, confirmar y resolver decisiones que necesiten tu criterio |
+
+Los proveedores y modelos se eligen por rol, con **1 a 4 implementadores**. Abrir el asistente desde Claude no obliga a usar Claude como director.
+
+**Guardá tus combos favoritos** y elegí uno como predeterminado para proyectos nuevos. Cada proyecto conserva sus modelos, instrucciones y comandos de pruebas. [Cómo configurar equipos y proyectos →](docs/USAGE.md#combos-y-configuración-por-proyecto)
+
+## Ver a los agentes
+
+El panel muestra **asignaciones, consultas, respuestas, cambios y pruebas** conforme suceden. Podés seleccionar una tarea, inspeccionar su diff, pausar el trabajo y responder cuando el director te consulta.
+
+```mermaid
+flowchart LR
+  U["Vos · tarea y confirmación"] --> D["Director · plan"]
+  D --> I["Implementadores · código"]
+  I -->|Duda| D
+  I --> Q["Director · pruebas y revisión"]
+  Q -->|Corregir| I
+  Q -->|Pruebas aprobadas| R["Rama de integración"]
+  D -.->|Necesita tu criterio| U
+  classDef director fill:#222c43,stroke:#a7beff,color:#e3e9f3
+  classDef worker fill:#33291d,stroke:#efbd7b,color:#f8e8d5
+  classDef result fill:#17372d,stroke:#88d2b1,color:#dcf4e9
+  class D,Q director
+  class I worker
+  class R result
 ```
 
-En Codex también podés elegir la skill desde `/skills`. Reabrí el chat si todavía no aparece después de instalar. Cada cliente conserva su propio formato de invocación; no hay un comando `/orquestar` idéntico en ambos.
+**Una duda vuelve al director. Una prueba fallida vuelve a implementación.** Las tareas independientes pueden avanzar en paralelo. La integración queda en una rama de Orquesta para que la revises y la fusiones; no hace push automático del trabajo generado.
 
-El asistente guía este flujo:
+Son comunicaciones y acciones observables de los agentes. El panel no muestra razonamiento privado interno ni una terminal completa por modelo.
 
-1. Usar el equipo del proyecto, elegir un combo guardado o personalizarlo.
-2. Elegir el modelo orquestador, el modelo implementador y la cantidad de implementadores.
-3. Guardar el combo si querés reutilizarlo.
-4. Escribir la tarea, revisar el equipo y confirmar.
-5. Abrir el panel y seguir asignaciones, consultas, respuestas, cambios y pruebas.
+### Probalo sin gastar llamadas
 
-La selección dentro del chat usa las preguntas que ofrece cada cliente, o mensajes con opciones. La skill contiene las instrucciones del asistente; no modifica la interfaz interna de Codex o Claude. El panel es una interfaz local en el navegador, compartida por ambos clientes.
-
-**El chat desde el que lo abrís no determina quién dirige.** Podés abrirlo en Claude y elegir Astra como orquestador, o usar un modelo de Claude como orquestador y modelos de Codex como implementadores. Los nombres de modelo se envían al proveedor elegido; se comprueba su acceso al ejecutar, sin sustituir modelos automáticamente.
-
-## Desde una terminal normal
-
-Dentro de cualquier repositorio:
-
-```powershell
-orquesta
-```
-
-Se abre el panel. Usá **Configurar este proyecto**, elegí el equipo, guardá, escribí la tarea y pulsá **Revisar tarea**. Los agentes empiezan cuando pulsás **Confirmar e iniciar**.
-
-Para abrir el panel y recuperar inmediatamente la terminal:
-
-```powershell
-orquesta launch
-```
-
-Para abrir tu Codex de terminal conectado al mismo panel:
-
-```powershell
-orquesta codex
-```
-
-No hace falta `setup`, modificar `.gitignore` ni hacer un commit para configurar Orquesta. Podés abrir y configurar un repo con cambios pendientes. Antes de iniciar una ejecución, el repo debe tener un commit inicial y sus cambios guardados en Git o en un stash; Orquesta muestra qué está pendiente y no lo guarda por vos.
-
-## Combos y configuración por proyecto
-
-En **Configurar este proyecto** podés elegir proveedores, modelos, implementadores simultáneos, límites de llamadas y correcciones, instrucciones y comandos de pruebas.
-
-**Guardar combo** conserva el equipo para todos tus repositorios. La opción **Preseleccionar en proyectos nuevos** lo convierte en tu equipo inicial. Los proyectos que ya configuraste conservan su propia selección. Los comandos de pruebas, preparación e instrucciones siguen perteneciendo a cada repo.
-
-Los ajustes locales están en `.orquesta/config.json`, excluida mediante los metadatos locales de Git. Los combos personales están en `~/.orquesta/presets.json`. Si un proyecto ya contiene `orquesta.config.json`, se usa como base; la configuración local tiene prioridad. Cada ejecución guarda una copia de su configuración para que una reanudación conserve el equipo y las pruebas originales.
-
-El director siempre realiza plan, decisiones y calidad. Los implementadores pueden trabajar en paralelo cuando sus archivos y dependencias lo permiten. La concurrencia admitida en esta versión es de 1 a 4 implementadores.
-
-## Ver y controlar a los agentes
-
-El panel muestra roles y tareas, mensajes explícitos entre agentes, consultas al orquestador, decisiones, diffs y resultados de pruebas. Son acciones y comunicaciones observables; no razonamiento privado interno ni terminales completas de cada modelo.
-
-Codex, Claude y el panel controlan el mismo servicio por proyecto. Podés iniciar desde el chat y pausar o responder desde el panel. No hace falta refrescar para recibir eventos de esa ejecución. Los comandos de inicio MCP también devuelven el enlace del panel.
-
-```powershell
-orquesta status
-orquesta events RUN_ID --after 0
-orquesta inspect RUN_ID
-orquesta pause
-orquesta answer RUN_ID TASK_ID "Tu decisión"
-orquesta resume RUN_ID --ui
-orquesta stop
-```
-
-`launch` y `start` dejan el servicio en segundo plano; `stop` lo pausa y cierra conservando los datos. Si una terminal inició el servicio en primer plano, `Ctrl+C` lo pausa y cierra. Cerrar un cliente que se conectó a un servicio existente conserva ese servicio.
-
-Las entregas aprobadas quedan en `orquesta/<run_id>/integration`. Revisá esa rama y fusionála cuando quieras. La rama de origen conserva su HEAD; no se hace push automático del trabajo generado.
-
-## Pruebas y dependencias de cada repo
-
-El panel permite elegir Node.js, Vitest, Playwright, pytest o un comando propio. El ejecutor recibe los archivos de pruebas de aceptación al final de sus argumentos. La configuración del framework debe incluir la carpeta de pruebas elegida: por ejemplo, revisá `testDir` si usás Playwright.
-
-Los agentes trabajan en worktrees separados. Si tu proyecto necesita dependencias, configurá **Preparar dependencias**, por ejemplo `npm ci --ignore-scripts`, y agregá comprobaciones como `npm run build`. Estos comandos se ejecutan dentro de cada worktree; la preparación debe dejar los archivos versionados intactos. Preparar servicios, credenciales de pruebas o entornos complejos puede requerir ajustes propios del proyecto.
-
-Los comandos usan argumentos de procesos sin shell: `&&`, redirecciones y expansión de variables no se interpretan. Escribí un comando por línea. Las rutas con espacios van entre comillas.
-
-## Demo y desarrollo
-
-```powershell
+```sh
 orquesta demo --ui
 ```
 
-La demo simula los modelos y ejecuta Git y tests reales. No consume llamadas a modelos. Incluye una consulta, un fallo y su corrección.
+La demo usa modelos simulados y ejecuta Git y tests reales. Incluye una consulta al director, una prueba fallida y una corrección. Para abrir el panel normal y recuperar la terminal, usá `orquesta launch`.
 
-Desde el código fuente:
+## Documentación y estado
 
-```powershell
+| Necesitás… | Empezá acá |
+| --- | --- |
+| Instalar desde un chat o actualizar | [INSTALL.md](INSTALL.md) |
+| Configurar repos, combos, pruebas y comandos | [Guía de uso](docs/USAGE.md) |
+| Entender el motor y las integraciones | [Arquitectura](docs/ARCHITECTURE.md) |
+| Ver qué se probó realmente | [Validación](docs/VALIDATION.md) |
+| Darle contexto a otro LLM | [llms.txt](llms.txt) |
+| Reportar un problema | [Issues](https://github.com/EmanuelMdz/orquesta/issues) |
+
+**Versión temprana, 0.2.0.** La suite cubre 25 pruebas y corre en Windows y Linux. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
+
+Los worktrees separan los cambios; las pruebas y la preparación ejecutan código del proyecto. Una caída abrupta o un conflicto de integración puede necesitar revisión manual. [Alcance y límites →](docs/USAGE.md#alcance)
+
+<details>
+<summary>Desarrollar Orquesta desde el código fuente</summary>
+
+```sh
+git clone https://github.com/EmanuelMdz/orquesta.git
+cd orquesta
 npm ci
 npm test
 npm run check
 ```
 
-`npm run test:live` ejecuta una prueba con modelos reales y consume uso de tus cuentas. No forma parte de la suite normal. [Validación](docs/VALIDATION.md) · [Arquitectura](docs/ARCHITECTURE.md).
+`npm run test:live` llama a modelos reales y consume uso de tus cuentas. No forma parte de la suite normal. Los datos locales de ejecución, credenciales y paquetes generados se excluyen de Git.
 
-## Alcance
+</details>
 
-Versión 0.2: CLI, skills para ambos chats, equipos configurables, combos personales, panel local y motor con Git, decisiones y QA independiente. Los agentes proponen archivos estructurados y el motor valida su alcance antes de escribirlos. Un resultado de revisión no puede aprobar una prueba fallida.
+---
 
-El panel escucha en `127.0.0.1` y usa un token local. `.orquesta` contiene historial y código; se excluye de Git y del paquete. Los worktrees separan cambios, pero no son un sandbox de seguridad. Las pruebas y los comandos de preparación ejecutan código del proyecto.
+Hecho por [EmanuelMdz](https://github.com/EmanuelMdz). Orquesta es un proyecto independiente; no está afiliado a OpenAI ni a Anthropic.
 
-La pausa normal está probada. Una caída abrupta durante escrituras o fusiones puede necesitar revisión manual. Los conflictos de integración bloquean el trabajo; no hay reparación automática de pruebas incorrectas. Se validó el circuito real Astra→Opus en Windows. Los otros combos tienen pruebas de enrutamiento de CLI, no una garantía de funcionamiento de todos los modelos o frameworks.
-
-Referencias: [skills de Codex](https://learn.chatgpt.com/docs/build-skills), [skills de Claude Code](https://code.claude.com/docs/en/skills) e [instalación desde Git con npm](https://docs.npmjs.com/cli/install/).
+Licencia: por definir (`UNLICENSED`).

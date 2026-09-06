@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Orquesta</title>
+  <rect width="128" height="128" rx="34" fill="#171e2d"/>
+  <circle cx="64" cy="64" r="37" fill="none" stroke="#a7beff" stroke-width="11"/>
+  <circle cx="64" cy="64" r="9" fill="#a7beff"/>
+  <circle cx="96" cy="85" r="14" fill="#88d2b1" stroke="#171e2d" stroke-width="7"/>
+</svg>

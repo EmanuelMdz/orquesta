@@ -16,6 +16,7 @@
     "integrations",
     "README.md",
     "INSTALL.md",
+    "llms.txt",
     "docs"
   ],
   "engines": {
