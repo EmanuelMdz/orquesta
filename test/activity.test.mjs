@@ -39,6 +39,19 @@ test('blocked planning keeps configured workers visible and the full objective c
   d.getElementById('objective-details').open=true;d.getElementById('show-logs').click();d.getElementById('feed-all').click();
   assert(requests.every(request=>request.method==='GET'));assert.equal(calls(),0);assert.equal(engine.store.get(run.id).calls,1);
 });
+test('stagnation is explained in the panel with no blind retry and no provider calls',async t=>{
+  const{w,engine,run,calls}=await view(t,run=>{
+    run.status='blocked';run.error='Hay tareas bloqueadas o dependencias pendientes.';
+    run.tasks=[{id:'fix',title:'Arreglar cálculo',description:'',allowedPaths:['src/add.js'],acceptance:[],dependsOn:[],checks:[],attempts:3,questions:0,workerId:1,status:'blocked',error:'Sin avance tras cambiar el enfoque',corrections:{context:'x',history:[],stalledRounds:2,stopped:true}}];
+  });
+  assert.match(w.document.getElementById('recovery-title').textContent,/repetición sin avance/);
+  assert.equal(w.document.getElementById('resume').hidden,true);
+  assert.equal(w.document.getElementById('cfg-corrections'),null);
+  engine.event(run,'astra','task.replanning','Verificar primero el cálculo intermedio.','fix');
+  await until(()=>w.document.getElementById('feed').textContent.includes('Cambio de enfoque'));
+  assert.match(w.document.getElementById('feed').textContent,/Astra → Opus 1/);assert.equal(calls(),0);
+});
+
 test('real SSE updates the map and Astra/System/Opus conversation with no extra agent work',async t=>{
   const{w,engine,run,requests,calls}=await view(t,run=>{
     run.status='running';run.calls=3;

@@ -91,6 +91,7 @@ export class DemoProvider implements Provider {
     }
     if(request.phase==='tests')value={summary:'Pruebas independientes de aceptación.',files:[write('test/orquesta/'+request.task!.id+'/acceptance.test.mjs',request.task!.id==='saludo'?"import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { greet } from '../../../src/greet.js';\ntest('saludo con nombre',()=>assert.equal(greet('Ana'),'Hola, Ana!'));\ntest('saludo sin nombre',()=>assert.equal(greet('  '),'Hola, mundo!'));\n":"import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from '../../../src/add.js';\ntest('suma positiva',()=>assert.equal(add(2,3),5));\ntest('suma negativa',()=>assert.equal(add(-3,1),-2));\n")]};
     if(request.phase==='review'){const failed=request.task!.checks.some(c=>c.exitCode!==0);value={verdict:failed?'changes_requested':'approved',summary:failed?'El caso vacío incumple la decisión. Corregí greet.':'El código y las pruebas cumplen los criterios.',findings:failed?['No se usa mundo para un nombre vacío.']:[]};}
+    if(request.phase==='review'){value.progress=request.task!.review?'advancing':'initial';value.nextApproach=value.verdict==='changes_requested'?'Aplicar el valor mundo después de recortar los espacios.':'';}
     validate(request.schema,value);return{value,session:'demo-'+request.phase+'-'+(request.task?.id??'director')};
   }
 }

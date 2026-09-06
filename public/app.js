@@ -9,7 +9,7 @@
   const labels={created:'Preparada',running:'Trabajando',paused:'Pausada',waiting_user:'Esperando tu respuesta',blocked:'Bloqueada',completed:'Completada',queued:'En cola',implementing:'Escribiendo código',waiting_astra:'Esperando a Astra',testing:'En pruebas',reviewing:'En revisión',approved:'Aprobada',integrated:'Integrada'};
   const phases={plan:'Planificando',implement:'Escribiendo código',decide:'Resolviendo una consulta',tests:'Preparando pruebas',review:'Revisando código'};
   const eventLabels={'decision.requested':'Consulta','decision.answered':'Respuesta','task.correction':'Corrección','task.approved':'Entrega aprobada','files.changed':'Archivos modificados','check.started':'Prueba iniciada','check.completed':'Resultado de prueba','plan.created':'Plan','provider.started':'Trabajando','run.completed':'Completado','task.integrated':'Integración','decision.needs_user':'Pregunta para vos','task.assigned':'Asignación','task.started':'Tarea iniciada','agent.result':'Resultado','agent.message':'Mensaje','run.created':'Tarea confirmada','run.started':'Inicio','run.blocked':'Bloqueo','task.blocked':'Bloqueo','run.paused':'Pausa','workspace.preparing':'Preparando entorno','workspace.prepared':'Entorno listo','tool.started':'Consulta al proyecto','tool.completed':'Consulta completada','provider.log':'Log técnico','provider.usage':'Uso reportado','integration.testing':'Pruebas de integración'};
-  eventLabels['provider.model']='Modelo';eventLabels['provider.progress']='Actividad';
+  eventLabels['task.replanning']='Cambio de enfoque';eventLabels['provider.model']='Modelo';eventLabels['provider.progress']='Actividad';
   const current=()=>state.runs.find(run=>run.id===runId);
   const config=()=>current()?.config||state.config||{};
   const modelName=role=>{const model=role==='opus'?(config().opusModel||'opus'):(config().astraModel||'gpt-6-astra');return model==='gpt-6-astra'?'Astra':model==='opus'?'Opus':model;};
@@ -202,7 +202,7 @@
       const body=node('div','event-body'),key=actor(event),worker=eventWorker(event);
       let from=actorName(key);
       if(event.type==='decision.requested')from+=' → '+modelName('astra');
-      if(['decision.answered','task.correction'].includes(event.type)&&worker)from+=' → '+actorName('worker:'+worker);
+      if(['decision.answered','task.correction','task.replanning'].includes(event.type)&&worker)from+=' → '+actorName('worker:'+worker);
       const title=node('div','event-title',from);title.append(node('span','tag',eventLabels[event.type]||event.type));
       if(event.role==='quality'&&key==='astra')title.append(node('span','tag','Calidad'));
       body.append(title);

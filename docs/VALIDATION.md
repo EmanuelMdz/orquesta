@@ -1,5 +1,11 @@
 # Validación
 
+## Versión 0.2.5 — correcciones y estancamiento
+
+La suite verifica una entrega que requiere cuatro correcciones y termina con pruebas reales aprobadas, configuraciones antiguas que ya no aplican `maxCorrections`, oscilaciones A → B → A → B, estancamiento indicado por Astra aunque cambie el código, hallazgos repetidos y mejora de comprobaciones. Se comprueba un único cambio de enfoque antes de detener una repetición, persistencia al reiniciar y cero nuevas llamadas para esa tarea al reanudar sin cambios. Aportar nueva evidencia permite volver a intentarlo. Una aprobación del modelo sigue sin poder superar pruebas ejecutables fallidas.
+
+El panel recibe el cambio de enfoque por HTTP/SSE y explica la detención sin ofrecer reintentos idénticos. Pruebas offline con proveedores simulados, Git y comandos de aceptación reales; no se hicieron llamadas pagas para validar esta versión. La detección no garantiza identificar todo bucle semántico y conserva el presupuesto de llamadas.
+
 ## Versión 0.2.4 — actividad y respuestas concurrentes
 
 38 pruebas aprobadas en Windows. Se comprueban respuestas que siguen generando más allá del intervalo de inactividad, cancelación con duración ilimitada, captura acotada de streams largos y detención pese a pings, reintentos y logs repetidos. El streaming de Claude agrega `--include-partial-messages`, sin cambiar el prompt ni pedir narración. Los fragmentos internos sólo acreditan actividad; no se almacenan en el historial visible.

@@ -59,8 +59,14 @@ test('a user can answer while another implementer works without losing the decis
   assert.equal(engine.store.events(run.id).filter(event=>event.type==='decision.answered').length,1);
 });
 test('review approval cannot override failing executable tests',async t=>{
-  const base=new DemoProvider(1);const provider={invoke:r=>r.phase==='review'?Promise.resolve({value:{verdict:'approved',summary:'Looks good',findings:[]}}):base.invoke(r)};
-  const{engine}=await fixture(t,{maxCorrections:0},provider);const run=await engine.create('gate','demo');const result=await engine.start(run.id);assert.equal(result.status,'blocked');assert.notEqual(result.tasks.find(t=>t.id==='saludo').status,'integrated');assert.equal(result.finalSha,undefined);
+  const base=new DemoProvider(1);const provider={invoke:async r=>{
+    if(r.phase==='review')return{value:{verdict:'approved',summary:'Looks good',findings:[],progress:'advancing',nextApproach:''}};
+    const result=await base.invoke(r);
+    if(r.phase==='implement'&&r.task.id==='saludo'&&result.value.status==='completed')result.value.files[0].content="export function greet(name) { return 'broken'; }\n";
+    return result;
+  }};
+  const{engine}=await fixture(t,{},provider);const run=await engine.create('gate','demo');const result=await engine.start(run.id);assert.equal(result.status,'blocked');assert.notEqual(result.tasks.find(t=>t.id==='saludo').status,'integrated');assert.equal(result.finalSha,undefined);
+  assert.match(result.tasks.find(t=>t.id==='saludo').error,/Sin avance/);
 });
 test('call budget stops the workflow before additional provider usage',async t=>{
   const{engine}=await fixture(t,{maxCalls:1});const run=await engine.create('budget','demo');const result=await engine.start(run.id);assert.equal(result.status,'blocked');assert.equal(result.calls,1);

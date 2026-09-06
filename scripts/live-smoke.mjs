@@ -7,7 +7,7 @@ import { defaults,doctor } from '../dist/config.js';
 const info=await doctor(defaults);
 if(info.providers.some(p=>!p.authenticated))throw new Error('Iniciá sesión con Codex y Claude antes de test:live.');
 const root=resolve(import.meta.dirname,'..');const repo=await createDemo(root);
-const config={...defaults,workers:1,maxCalls:10,maxCorrections:1,timeoutMs:180000,maxContextBytes:50000};
+const config={...defaults,workers:1,maxCalls:10,timeoutMs:180000,maxContextBytes:50000};
 const engine=new Engine(repo,config);
 engine.on('event',e=>{if(!['provider.log','provider.usage'].includes(e.type))console.log(e.time.slice(11,19),e.role,e.type,e.message);});
 const objective='Prueba de integración con modelos reales. Planificá UNA SOLA tarea de implementación con id suma-live y allowedPaths=["src/add.js"]. Implementar export function add(a,b): suma dos números finitos, permite negativos y decimales; para NaN, Infinity y entradas que no sean números, lanzar TypeError. No modificar greet.js. Protocolo obligatorio de esta prueba: en su PRIMERA respuesta Opus debe devolver needs_decision preguntando a Astra si los valores no finitos deben lanzar TypeError. Astra responderá confirmando esa regla y después Opus implementará. Esto comprueba el canal de consultas aunque el criterio esté indicado aquí. Astra Calidad debe crear pruebas node:test compactas y revisarlas. No añadir dependencias.';

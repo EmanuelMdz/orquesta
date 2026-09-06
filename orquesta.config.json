@@ -3,7 +3,6 @@
   "astraModel": "gpt-6-astra",
   "opusModel": "opus",
   "workers": 2,
-  "maxCorrections": 2,
   "maxQuestions": 3,
   "maxCalls": 40,
   "timeoutMs": 300000,

@@ -10,6 +10,7 @@ import { cleanEnvironment, execute, redact } from './process.js';
 import { CliProvider, DemoProvider } from './providers.js';
 import { executable } from './commands.js';
 import { validateConfig } from './config.js';
+import { correctionContext, implementationIdentity, recordCorrection, stalledMessage } from './corrections.js';
 import type { Change, CheckResult, Config, Phase, Provider, Role, Run, Task } from './types.js';
 
 export class Engine extends EventEmitter {
@@ -52,6 +53,7 @@ export class Engine extends EventEmitter {
       'Plan: provide a small dependency DAG, unique safe task IDs, exact repository-relative allowedPaths (no globs), and independently testable acceptance criteria. Avoid parallel tasks touching the same files.',
       `Independent tests: return new executable tests ONLY under ${this.config.qaRoot}/${task?.id??'TASK'}/. Use the configured test runner ${JSON.stringify(this.config.qaCommand)}. File imports are relative to the test location. Do not weaken or replace existing tests.`,
       'Review: inspect the actual diff, criteria, decisions and test results. Approval requires no material findings and successful relevant checks. If a test itself is defective, report it rather than silently weakening it.',
+      ...(phase==='review'?['Compare this revision with previousReview and correctionDiff. progress is initial only without a previous review, advancing only for concrete resolved issues or verified new evidence, otherwise stalled (including reformulations or cosmetic edits). For changes_requested, nextApproach must give actionable next steps; on stagnation change the approach, diagnose the cause, or identify the exact missing evidence. Never lower acceptance criteria to break a loop.']:[]),
       'Decision: answer the worker from the agreed requirements; return needs_user only when essential product information is missing. An answer should be actionable.',
       'Project preferences configured by the user: '+(this.config.instructions||'No additional preferences.'),
       JSON.stringify({objective:run.objective,planSummary:run.summary,decisions:run.decisions,task:task?{id:task.id,title:task.title,description:task.description,allowedPaths:task.allowedPaths,acceptance:task.acceptance}:undefined,details})
@@ -134,10 +136,17 @@ export class Engine extends EventEmitter {
     if(task.status==='approved'&&task.commit){if(await head(task.worktree!)===task.commit)return;throw new Error('La entrega aprobada fue modificada.');}
     if(!task.worktree){task.worktree=join(this.repo,'.orquesta','worktrees',run.id,task.id);task.branch='orquesta/'+run.id+'/'+task.id;task.base=await head(run.integration);this.store.save(run);}
     await createWorktree(this.repo,task.worktree,task.branch!,task.base!);
+    const contextKey=correctionContext(run,task,this.config);
+    const code=await implementationIdentity(task);
+    if(task.corrections?.stopped&&task.corrections.context===contextKey&&task.corrections.history.at(-1)?.code===code)throw new Error(stalledMessage);
+    if(!task.corrections||task.corrections.context!==contextKey||task.corrections.stopped)task.corrections={context:contextKey,history:[],stalledRounds:0};
+    this.store.save(run);
     await this.prepareWorkspace(run,task.worktree,task.id);
-    while(task.attempts<=this.config.maxCorrections){
+    while(true){
+      const currentContext=correctionContext(run,task,this.config);
+      if(task.corrections.context!==currentContext)task.corrections={context:currentContext,history:[],stalledRounds:0};
       this.checkPaused();task.status='implementing';this.store.save(run);this.event(run,'opus','task.started',task.title,task.id);
-      const implementation=await this.call(run,'implement','opus',task.worktree,{context:await this.context(task.worktree,task.allowedPaths),feedback:task.feedback,checks:task.checks},task);
+      const implementation=await this.call(run,'implement','opus',task.worktree,{context:await this.context(task.worktree,task.allowedPaths),feedback:task.feedback,checks:task.checks,changedApproach:task.corrections.strategy},task);
       if(implementation.status==='needs_decision'){
         if(!implementation.question.trim()||implementation.files.length)throw new Error('Una consulta debe contener una pregunta y ningún cambio.');
         if(task.questions>=this.config.maxQuestions)throw new Error('Límite de consultas alcanzado. Revisá el alcance de la tarea.');
@@ -159,12 +168,17 @@ export class Engine extends EventEmitter {
       for(const file of task.qaFiles!){if(readFileSync(join(task.worktree,file.path),'utf8')!==file.content)throw new Error('Una prueba de Astra fue modificada fuera del flujo.');}
       task.status='testing';this.store.save(run);task.checks=await this.checks(run,task.worktree,task.qaFiles!.map(f=>f.path),task.id);this.store.save(run);
       task.status='reviewing';this.store.save(run);const reviewSha=await head(task.worktree);const diff=await git(task.worktree,['diff',task.base!,reviewSha,'--']);
-      task.review=await this.call(run,'review','quality',task.worktree,{diff:diff.slice(0,this.config.maxContextBytes),diffTruncated:diff.length>this.config.maxContextBytes,checks:task.checks,context:await this.context(task.worktree,task.allowedPaths)},task);
+      const previousSha=task.corrections.history.at(-1)?.sha;
+      const correctionDiff=previousSha?await git(task.worktree,['diff',previousSha,reviewSha,'--',...task.allowedPaths]):undefined;
+      task.review=await this.call(run,'review','quality',task.worktree,{diff:diff.slice(0,this.config.maxContextBytes),diffTruncated:diff.length>this.config.maxContextBytes,checks:task.checks,context:await this.context(task.worktree,task.allowedPaths),previousReview:task.review,correctionDiff:correctionDiff?.slice(0,this.config.maxContextBytes),correctionDiffTruncated:(correctionDiff?.length??0)>this.config.maxContextBytes,changedApproach:task.corrections.strategy},task);
       const passed=task.checks.length>0&&task.checks.every(c=>c.exitCode===0)&&task.review!.verdict==='approved'&&task.review!.findings.length===0;
       if(passed){if(await head(task.worktree)!==reviewSha)throw new Error('El código cambió durante la revisión.');await assertClean(task.worktree);task.status='approved';task.commit=reviewSha;this.store.save(run);this.event(run,'quality','task.approved',task.review!.summary,task.id,{sha:reviewSha});return;}
       task.feedback=JSON.stringify({review:task.review,failedChecks:task.checks.filter(c=>c.exitCode!==0)});task.attempts++;this.store.save(run);this.event(run,'quality','task.correction',task.review!.summary,task.id);
+      const action=recordCorrection(task,{sha:reviewSha,code:await implementationIdentity(task),findings:task.review!.findings,failedChecks:task.checks.filter(c=>c.exitCode!==0).map(c=>c.name).sort()});
+      this.store.save(run);
+      if(action==='stop')throw new Error(stalledMessage);
+      if(action==='replan')this.event(run,task.review!.nextApproach?.trim()?'astra':'system','task.replanning',task.corrections.strategy!,task.id);
     }
-    throw new Error('Límite de correcciones alcanzado; Astra debe replantear la tarea.');
   }
   private async checks(run:Run,cwd:string,qaFiles:string[],taskId?:string):Promise<CheckResult[]>{
     const checks=[{name:'Pruebas independientes de Astra',command:this.config.qaCommand[0],args:[...this.config.qaCommand.slice(1),...qaFiles]},...this.config.checks];

@@ -2,7 +2,7 @@
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>Orquesta · Agentes en vivo</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/settings.css"><script src="/app.js" defer></script><script src="/settings.js" defer></script></head>
 <body>
-<header class="topbar"><a class="brand" href="/" aria-label="Orquesta"><span class="logo">o</span>orquesta<span class="version">LOCAL / 0.2.4</span></a><div class="top-right"><span id="mode" class="mode">Conectando</span><span id="connection" class="connection">● Conectando</span></div></header>
+<header class="topbar"><a class="brand" href="/" aria-label="Orquesta"><span class="logo">o</span>orquesta<span class="version">LOCAL / 0.2.5</span></a><div class="top-right"><span id="mode" class="mode">Conectando</span><span id="connection" class="connection">● Conectando</span></div></header>
 <div id="error" class="error" role="alert" hidden></div>
 <section class="workspace-bar"><div><span class="eyebrow">PROYECTO</span><div id="repo" class="repo">Cargando…</div></div><label class="run-picker">Ejecución<select id="run-select" aria-label="Elegir ejecución"><option>Sin ejecuciones</option></select></label></section>
 <details id="project-settings" class="project-settings">
@@ -27,7 +27,7 @@
 <label class="settings-wide">Preparar dependencias antes de trabajar <span class="muted">· opcional, un comando por línea</span><textarea id="cfg-setup" rows="2" placeholder="npm ci --ignore-scripts"></textarea></label>
 <label class="settings-wide">Comprobaciones adicionales <span class="muted">· opcional, un comando por línea</span><textarea id="cfg-checks" rows="2" placeholder="npm run build"></textarea></label>
 <details class="advanced-settings"><summary>Límites avanzados</summary><div class="settings-grid">
-<label>Rondas de corrección<input id="cfg-corrections" type="number" min="0" max="5" value="2" required></label>
+<p class="muted">Correcciones sin tope fijo. Si no hay avance, Astra cambia el enfoque. Si la repetición persiste, se conserva el trabajo y se detiene esa tarea.</p>
 <label>Consultas a Astra por tarea<input id="cfg-questions" type="number" min="1" max="10" value="3" required></label>
 <label>Tiempo máximo por comando o prueba (segundos)<input id="cfg-timeout" type="number" min="1" max="1800" value="300" required></label>
 <label>Duración total de cada respuesta (minutos)<input id="cfg-agent-timeout" type="number" min="0" max="1440" value="0" required><small>0 = sin límite de duración</small></label>

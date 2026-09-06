@@ -4,7 +4,7 @@
 > combos personales y un panel local para seguir decisiones, cambios y pruebas.
 
 Repositorio: https://github.com/EmanuelMdz/orquesta
-Versión de instalación documentada: v0.2.4
+Versión de instalación documentada: v0.2.5
 
 ## Instalar
 

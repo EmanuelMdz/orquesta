@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml"><img src="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml/badge.svg" alt="Checks en Windows, Linux y macOS"></a>
-  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.4"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.4-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.4"></a>
+  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.5"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.5-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.5"></a>
   <a href="#requisitos"><img src="https://img.shields.io/badge/Node.js-%E2%89%A5%2022.13-88d2b1?style=flat-square&amp;labelColor=171a20" alt="Node.js 22.13 o superior"></a>
 </p>
 
@@ -44,7 +44,7 @@ No inicies agentes ni modifiques el proyecto durante la instalación.
 En una terminal:
 
 ```sh
-npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.4 orquesta install
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.5 orquesta install
 ```
 
 Se instala **una vez para tu usuario**, con el asistente disponible en todos tus proyectos. No hace falta clonar Orquesta dentro de cada repo. Repetí el comando para reinstalar esta versión.
@@ -131,6 +131,8 @@ flowchart LR
 
 Son comunicaciones y acciones observables de los agentes. El panel no muestra razonamiento privado interno ni una terminal completa por modelo.
 
+Las correcciones no tienen un tope fijo: el equipo sigue mientras avance. Si se repiten entregas o problemas, Astra indica un cambio de enfoque; si persiste el estancamiento, se detiene esa tarea conservando el trabajo. El presupuesto de llamadas y la revisión de calidad siguen vigentes. [Cómo se evita una repetición →](docs/USAGE.md#ver-y-controlar-a-los-agentes)
+
 ### Probalo sin gastar llamadas
 
 ```sh
@@ -150,7 +152,7 @@ La demo usa modelos simulados y ejecuta Git y tests reales. Incluye una consulta
 | Darle contexto a otro LLM | [llms.txt](llms.txt) |
 | Reportar un problema | [Issues](https://github.com/EmanuelMdz/orquesta/issues) |
 
-**Versión temprana, 0.2.4.** La suite cubre 38 pruebas. GitHub Actions comprueba Windows, Linux y macOS, e instala el paquete en un perfil vacío con caché y configuración propias antes de abrir dos repositorios de prueba. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
+**Versión temprana, 0.2.5.** La suite cubre 44 pruebas. GitHub Actions comprueba Windows, Linux y macOS, e instala el paquete en un perfil vacío con caché y configuración propias antes de abrir dos repositorios de prueba. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
 
 Los worktrees separan los cambios; las pruebas y la preparación ejecutan código del proyecto. Una caída abrupta o un conflicto de integración puede necesitar revisión manual. [Alcance y límites →](docs/USAGE.md#alcance)
 

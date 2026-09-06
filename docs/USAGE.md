@@ -11,7 +11,7 @@ El combo inicial usa **Astra para planificar, resolver dudas, crear pruebas y re
 Requisitos: Node.js 22.13 o superior y Git. Cada proveedor que uses necesita su CLI oficial instalada, sesión iniciada y acceso al modelo elegido. En Windows también se detectan las CLI de las extensiones de VS Code. Las ejecuciones reales consumen el uso de tus cuentas.
 
 ```powershell
-npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.4 orquesta install
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.5 orquesta install
 ```
 
 El instalador prepara el paquete, lo instala globalmente e instala la skill `orquesta` para ambos clientes. No necesitás copiar nada dentro de tus proyectos.
@@ -74,7 +74,7 @@ No hace falta `setup`, modificar `.gitignore` ni hacer un commit para configurar
 
 ## Combos y configuración por proyecto
 
-En **Configurar este proyecto** podés elegir proveedores, modelos, implementadores simultáneos, límites de llamadas y correcciones, instrucciones y comandos de pruebas.
+En **Configurar este proyecto** podés elegir proveedores, modelos, implementadores simultáneos, presupuesto de llamadas, instrucciones y comandos de pruebas.
 
 **Guardar combo** conserva el equipo para todos tus repositorios. La opción **Preseleccionar en proyectos nuevos** lo convierte en tu equipo inicial. Los proyectos que ya configuraste conservan su propia selección. Los comandos de pruebas, preparación e instrucciones siguen perteneciendo a cada repo.
 
@@ -85,6 +85,12 @@ El director siempre realiza plan, decisiones y calidad. Los implementadores pued
 Las respuestas de los agentes no tienen un límite de duración por defecto (`agentTimeoutMs: 0`). El control de inactividad (`agentIdleTimeoutMs: 900000`) las detiene tras 15 minutos sin señales de avance. Los fragmentos de generación renuevan ese plazo; los pings, reintentos y logs repetidos no. La ausencia de actividad no demuestra un bug: también puede ser una espera del proveedor. Ambos ajustes están en **Límites avanzados**; 0 desactiva el límite correspondiente. Los comandos y pruebas conservan su límite separado (`timeoutMs`). Las ejecuciones antiguas incorporan sólo los campos que faltan al reanudarse; se respetan los límites explícitos ya guardados.
 
 ## Ver y controlar a los agentes
+
+Desde 0.2.5 las correcciones no tienen un tope fijo. El antiguo `maxCorrections` se ignora también en configuraciones, combos y ejecuciones guardadas. Una tarea bloqueada por ese límite puede continuar desde su entrega actual.
+
+Astra compara cada revisión con la anterior e indica si se resolvieron problemas y qué hacer después. El motor también compara el contenido del código, los hallazgos repetidos y las comprobaciones fallidas. Al detectar estancamiento, envía un **Cambio de enfoque** al implementador dentro del ciclo existente. Si la siguiente revisión sigue mostrando estancamiento, detiene esa tarea y conserva todo el trabajo. Reanudar sin cambios no genera otra llamada para ella; una nueva decisión, un ajuste de alcance/evidencia o un cambio de código confirmado en su worktree permiten volver a intentarlo.
+
+Es una detección de estancamiento, no una garantía de que todo cambio sea útil. Se mantienen el presupuesto de llamadas (`maxCalls`), las consultas, la inactividad y las comprobaciones de calidad. No se agregan llamadas de modelos para vigilar el ciclo o mostrarlo: la comparación semántica forma parte de la revisión habitual y usa algo más de contexto de esa revisión. El motor no divide ni reescribe el plan automáticamente.
 
 El mapa muestra al orquestador, System y los implementadores numerados. Al seleccionar un agente, la comunicación se filtra incluyendo consultas y respuestas relacionadas. **Ver todos** recupera la conversación completa. La selección de tarea permite inspeccionar diffs y pruebas de cada entrega.
 

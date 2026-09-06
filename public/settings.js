@@ -4,7 +4,7 @@
   window.addEventListener('pagehide',()=>{disposed=true;requests.abort();});
   const token = sessionStorage.getItem('orquesta-token');
   if (!token) return;
-  const fields = { orchestratorProvider:'cfg-orchestrator-provider', implementerProvider:'cfg-implementer-provider', astraModel:'cfg-astra', opusModel:'cfg-opus', workers:'cfg-workers', maxCalls:'cfg-calls', instructions:'cfg-instructions', qaRoot:'cfg-qa-root', maxCorrections:'cfg-corrections', maxQuestions:'cfg-questions' };
+  const fields = { orchestratorProvider:'cfg-orchestrator-provider', implementerProvider:'cfg-implementer-provider', astraModel:'cfg-astra', opusModel:'cfg-opus', workers:'cfg-workers', maxCalls:'cfg-calls', instructions:'cfg-instructions', qaRoot:'cfg-qa-root', maxQuestions:'cfg-questions' };
   let library={presets:[]};
   const presets = { node:'node --test', vitest:'node node_modules/vitest/vitest.mjs run', playwright:'node node_modules/@playwright/test/cli.js test', pytest:'python -m pytest' };
   async function api(path, body) {

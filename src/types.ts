@@ -8,10 +8,13 @@ export interface Plan { summary: string; tasks: TaskSpec[] }
 export interface Decision { taskId: string; question: string; answer: string; source: 'astra' | 'user' }
 export interface Check { name: string; command: string; args: string[] }
 export interface CheckResult { name: string; command: string[]; exitCode: number; output: string; durationMs: number; sha: string }
+export interface Review { verdict: string; summary: string; findings: string[]; progress?: 'initial'|'advancing'|'stalled'; nextApproach?: string }
+export interface CorrectionRevision { sha: string; code: string; findings: string[]; failedChecks: string[] }
+export interface CorrectionState { context: string; history: CorrectionRevision[]; stalledRounds: number; stopped?: boolean; strategy?: string }
 export interface Task extends TaskSpec {
   status: TaskStatus; worktree?: string; branch?: string; commit?: string; base?: string;
   attempts: number; questions: number; workerId?: number; workerSession?: string; qaFiles?: Change[];
-  feedback?: string; checks: CheckResult[]; review?: { verdict: string; summary: string; findings: string[] };
+  feedback?: string; checks: CheckResult[]; review?: Review; corrections?: CorrectionState;
   pendingQuestion?: string; error?: string;
 }
 export interface Run {
@@ -29,7 +32,7 @@ export interface Config {
   orchestratorProvider?: 'codex'|'claude'; implementerProvider?: 'codex'|'claude';
   instructions?: string; setupCommands?: Check[];
   version: 1; astraModel: string; opusModel: string; codexPath?: string; claudePath?: string;
-  workers: number; maxCorrections: number; maxQuestions: number; maxCalls: number;
+  workers: number; maxQuestions: number; maxCalls: number;
   timeoutMs: number; agentTimeoutMs: number; agentIdleTimeoutMs: number; maxContextBytes: number; qaRoot: string; qaCommand: string[]; checks: Check[];
 }
 export interface AgentRequest {

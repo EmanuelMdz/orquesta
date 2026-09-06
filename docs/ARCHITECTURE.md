@@ -1,5 +1,13 @@
 # Arquitectura de Orquesta
 
+## Correcciones sin tope fijo desde 0.2.5
+
+`maxCorrections` se elimina del motor y de los combos; `validateConfig` acepta y descarta el campo antiguo. El contador `attempts` conserva la historia, pero no impide corregir. El presupuesto `maxCalls` sigue siendo un techo de uso de modelos.
+
+La revisión añade `progress` y `nextApproach`, recibe la revisión anterior y el diff de la última corrección. `src/corrections.ts` guarda hasta 12 identidades de contenido Git, hallazgos y comprobaciones fallidas. Detecta entregas repetidas (incluyendo A → B → A), hallazgos iguales sin mejora de comprobaciones y estancamiento declarado por el revisor. La primera señal pide un cambio de enfoque con la revisión ya disponible; otra señal consecutiva detiene esa tarea. No hay una llamada separada de vigilancia ni de replanteo.
+
+La historia y el bloqueo persisten. Reanudar sin nueva evidencia, alcance o código no vuelve a llamar al modelo de esa tarea. Las decisiones humanas y condiciones de ejecución relevantes forman parte de la identidad del contexto. Los cambios de enfoque son instrucciones dentro del alcance existente; no modifican el DAG, las pruebas protegidas ni los criterios de aceptación. La detección semántica depende del revisor y no demuestra ausencia de todos los bucles; el presupuesto de llamadas se conserva como último límite.
+
 ## Actividad y respuestas desde 0.2.4
 
 `execute` acepta duración total 0 y un watchdog de inactividad que sólo se renueva cuando el adaptador identifica progreso. Claude emite fragmentos nativos; se guardan metadatos de actividad como máximo cada cinco segundos, sin almacenar razonamiento ni pedir mensajes nuevos. La captura por cola acota la memoria sin cortar por el tamaño acumulado del stream; cada línea mantiene un límite de tamaño. El modelo resuelto se registra desde los eventos de la CLI.
@@ -80,7 +88,7 @@ flowchart TD
 - La rama de origen no se modifica. La rama de integración termina en `/integration` para evitar colisiones con los nombres de ramas de tareas.
 - Se validan todas las rutas de una propuesta antes de escribir el primer archivo. Esto no garantiza transacciones ante una caída del sistema.
 - Los controles de pausa conservan el estado; no se responde automáticamente por el usuario.
-- Los límites de llamadas, contexto, tiempo, consultas y correcciones frenan bucles indefinidos.
+- La detección de estancamiento frena correcciones repetidas. Se conservan los límites de llamadas, contexto, consultas y los tiempos configurados.
 
 ## Transporte y almacenamiento
 

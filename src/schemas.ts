@@ -9,7 +9,7 @@ export const schemas = {
   implement: object({status:{enum:['completed','needs_decision']},summary:text,question:text,files}),
   decide: object({status:{enum:['answered','needs_user']},answer:text}),
   tests: object({summary:text,files:{...files,minItems:1}}),
-  review: object({verdict:{enum:['approved','changes_requested']},summary:text,findings:strings})
+  review: object({verdict:{enum:['approved','changes_requested']},summary:text,findings:strings,progress:{enum:['initial','advancing','stalled']},nextApproach:text})
 };
 export function validate(schema: object, value: unknown) {
   const check=ajv.compile(schema);

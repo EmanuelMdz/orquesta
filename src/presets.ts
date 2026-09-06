@@ -4,16 +4,17 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Config } from './types.js';
 
-export const teamKeys=['orchestratorProvider','implementerProvider','astraModel','opusModel','workers','maxCalls','maxCorrections','maxQuestions'] as const;
+export const teamKeys=['orchestratorProvider','implementerProvider','astraModel','opusModel','workers','maxCalls','maxQuestions'] as const;
 export interface Preset { id:string; name:string; team:Partial<Config> }
 interface Library { version:1; defaultId:string; presets:Preset[] }
-const builtin:Preset={id:'astra-opus',name:'Astra + Opus',team:{orchestratorProvider:'codex',implementerProvider:'claude',astraModel:'gpt-6-astra',opusModel:'opus',workers:2,maxCalls:40,maxCorrections:2,maxQuestions:3}};
+const builtin:Preset={id:'astra-opus',name:'Astra + Opus',team:{orchestratorProvider:'codex',implementerProvider:'claude',astraModel:'gpt-6-astra',opusModel:'opus',workers:2,maxCalls:40,maxQuestions:3}};
 const directory=()=>process.env.ORQUESTA_USER_DIR??join(homedir(),'.orquesta');
 export function presetLibrary():Library{
   const file=join(directory(),'presets.json');
   if(!existsSync(file))return{version:1,defaultId:builtin.id,presets:[structuredClone(builtin)]};
   const data=JSON.parse(readFileSync(file,'utf8'));
   if(data.version!==1||!Array.isArray(data.presets)||typeof data.defaultId!=='string')throw new Error('El archivo personal de combos no es válido.');
+  for(const preset of data.presets)if(preset.team)delete preset.team.maxCorrections;
   return data;
 }
 export function defaultTeam(){const library=presetLibrary();return library.presets.find(p=>p.id===library.defaultId)?.team??builtin.team;}
