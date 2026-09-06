@@ -9,10 +9,10 @@ El combo inicial usa **Astra para planificar, resolver dudas, crear pruebas y re
 Requisitos: Node.js 22.13 o superior y Git. Cada proveedor que uses necesita su CLI oficial instalada, sesión iniciada y acceso al modelo elegido. En Windows también se detectan las CLI de las extensiones de VS Code. Las ejecuciones reales consumen el uso de tus cuentas.
 
 ```powershell
-npm install -g git+https://github.com/EmanuelMdz/orquesta.git
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.0 orquesta install
 ```
 
-La instalación global compila el paquete e instala la skill `orquestar` para ambos clientes. No necesitás copiar nada dentro de tus proyectos. Si el repositorio es privado, necesitás acceso y autenticación de GitHub para instalarlo.
+El instalador prepara el paquete, lo instala globalmente e instala la skill `orquestar` para ambos clientes. No necesitás copiar nada dentro de tus proyectos. Si el repositorio es privado, necesitás acceso y autenticación de GitHub para instalarlo.
 
 También podés pasarle el enlace de este repo a Codex o Claude y pedirle: **«Instalá Orquesta para usarla en todos mis proyectos»**. Las instrucciones para ese agente están en [INSTALL.md](INSTALL.md).
 

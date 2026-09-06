@@ -8,7 +8,7 @@ import { serveMcp } from './mcp.js';
 import { execute } from './process.js';
 import { openService, backgroundService } from './service.js';
 import { openBrowser } from './browser.js';
-import { installIntegrations } from './integrations.js';
+import { installEverywhere } from './install.js';
 import type { Event, Run } from './types.js';
 
 async function connectCodex(){
@@ -60,7 +60,7 @@ Opciones: --repo RUTA, --no-open, --port NUMERO, --json.
 Ctrl+C pausa si esta terminal inició el servicio. Las llamadas reales consumen tus cuentas.`);return;
   }
   if(command==='mcp'){await serveMcp();return;}
-  if(command==='install'){print(installIntegrations());return;}
+  if(command==='install'){print(await installEverywhere());return;}
   if(command==='connect-codex'){print(await connectCodex());return;}
   if(command==='doctor'){
     const repo=await repository(values.repo??process.cwd()).catch(()=>undefined);
