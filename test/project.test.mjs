@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, mkdirSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,7 +19,7 @@ const source=fileURLToPath(new URL('..',import.meta.url));
 async function project(t){
   const dir=mkdtempSync(join(tmpdir(),'orq-project-'));const repo=join(dir,'repo');mkdirSync(repo);
   await git(repo,['init','-b','main']);writeFileSync(join(repo,'README.md'),'# Example\n');await commitAll(repo,'Initial');
-  const resources=[];t.after(async()=>{for(const resource of resources)await resource.close();rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:200});});return{dir,repo,resources};
+  const resources=[];t.after(async()=>{for(const resource of resources)await resource.close();await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:200});});return{dir,repo,resources};
 }
 
 test('first use needs no tracked config, gitignore edit or extra commit; projects keep separate settings',async t=>{
@@ -76,9 +77,12 @@ test('launch returns a reusable background service that can be closed from anoth
   const {repo}=await project(t);const service=await backgroundService(repo);const again=await backgroundService(repo);
   assert.equal(service.url,again.url);assert.equal(service.owned,false);
   const info=await service.request('/api/config');assert.equal(info.dirty,'');
+  const {pid}=await service.request('/api/health');
   await service.request('/api/stop',{});
   let stopped=false;for(let i=0;i<30;i++){await new Promise(r=>setTimeout(r,100));if(!await findService(repo)){stopped=true;break;}}
   assert(stopped,'Background service must release its descriptor after stopping');
+  let exited=false;for(let i=0;i<100;i++){try{process.kill(pid,0);}catch(error){if(error.code==='ESRCH'){exited=true;break;}throw error;}await new Promise(resolve=>setTimeout(resolve,50));}
+  assert(exited,'The background process must exit before removing its Windows working directory');
 });
 
 test('one shared service connects Codex MCP and dashboard; closing a client preserves its owner',async t=>{
