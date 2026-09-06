@@ -10,7 +10,7 @@ Los proveedores se eligen por rol: `orchestratorProvider` y `implementerProvider
 
 `public/settings.js` implementa la configuración visual y los combos. El formulario de tarea muestra equipo y objetivo antes de confirmar. Si cambia la configuración entre la revisión y la confirmación, el servidor exige revisarla de nuevo.
 
-`integrations/orquestar/SKILL.md` contiene el asistente conversacional para ambos chats. `src/integrations.ts` instala copias personales con un helper que apunta al paquete instalado. El postinstall sólo registra skills desde la ubicación global final, nunca desde un checkout temporal de npm. No cambia políticas de aprobación.
+`integrations/orquesta/SKILL.md` contiene el asistente conversacional para ambos chats. `src/integrations.ts` instala copias personales con un helper que apunta al paquete instalado. El postinstall sólo registra skills desde la ubicación global final, nunca desde un checkout temporal de npm. No cambia políticas de aprobación.
 
 Los comandos de preparación del proyecto se ejecutan antes de trabajar en cada worktree. Deben dejar intactos sus archivos versionados. La configuración del framework sigue siendo responsabilidad del proyecto.
 

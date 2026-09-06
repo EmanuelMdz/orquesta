@@ -11,10 +11,10 @@ El combo inicial usa **Astra para planificar, resolver dudas, crear pruebas y re
 Requisitos: Node.js 22.13 o superior y Git. Cada proveedor que uses necesita su CLI oficial instalada, sesión iniciada y acceso al modelo elegido. En Windows también se detectan las CLI de las extensiones de VS Code. Las ejecuciones reales consumen el uso de tus cuentas.
 
 ```powershell
-npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.0 orquesta install
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.1 orquesta install
 ```
 
-El instalador prepara el paquete, lo instala globalmente e instala la skill `orquestar` para ambos clientes. No necesitás copiar nada dentro de tus proyectos.
+El instalador prepara el paquete, lo instala globalmente e instala la skill `orquesta` para ambos clientes. No necesitás copiar nada dentro de tus proyectos.
 
 También podés pasarle el enlace de este repo a Codex o Claude y pedirle: **«Instalá Orquesta para usarla en todos mis proyectos»**. Las instrucciones para ese agente están en [INSTALL.md](../INSTALL.md).
 
@@ -25,16 +25,16 @@ Si tu npm omite los scripts de instalación, ejecutá `orquesta install` despué
 En **Claude Code**, escribí:
 
 ```text
-/orquestar
+/orquesta
 ```
 
 En **Codex**, escribí:
 
 ```text
-$orquestar
+$orquesta
 ```
 
-En Codex también podés elegir la skill desde `/skills`. Reabrí el chat si todavía no aparece después de instalar. Cada cliente conserva su propio formato de invocación; no hay un comando `/orquestar` idéntico en ambos.
+En Codex también podés elegir la skill desde `/skills`. Reabrí el chat si todavía no aparece después de instalar. Cada cliente conserva su propio formato de invocación; no hay un comando `/orquesta` idéntico en ambos.
 
 El asistente guía este flujo:
 

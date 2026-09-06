@@ -52,8 +52,13 @@ test('a personal combo becomes the default in new projects while existing projec
 
 test('skill installation covers both clients and preserves an existing unrelated skill',async t=>{
   const {dir}=await project(t);const home=join(dir,'home');const result=installIntegrations(home);
-  assert.equal(result.installed.length,2);for(const target of result.installed){assert(existsSync(join(target,'SKILL.md')));assert(existsSync(join(target,'launch.mjs')));}
-  const helper=join(result.installed[0],'launch.mjs');const response=await execute(process.execPath,[helper,'--version'],{timeoutMs:10000});assert.equal(response.code,0);assert.match(response.stdout,/0.2.0/);
+  assert.equal(result.installed.length,4);
+  const version=JSON.parse(readFileSync(join(source,'package.json'),'utf8')).version;
+  for(const target of result.installed){
+    assert(existsSync(join(target,'SKILL.md')));assert(existsSync(join(target,'launch.mjs')));
+    const helper=join(target,'launch.mjs');const response=await execute(process.execPath,[helper,'--version'],{timeoutMs:10000});assert.equal(response.code,0);assert.equal(response.stdout.trim(),version);assert.equal(response.stderr,'');
+  }
+  assert.deepEqual(installIntegrations(home).installed,result.installed);
   const existing=join(result.installed[0],'SKILL.md');writeFileSync(existing,'Personal skill');assert.throws(()=>installIntegrations(home),/Se conservó/);assert.equal(readFileSync(existing,'utf8'),'Personal skill');
 });
 

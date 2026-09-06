@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml"><img src="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml/badge.svg" alt="Checks en Windows y Linux"></a>
-  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.0"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.0-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.0"></a>
+  <a href="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml"><img src="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml/badge.svg" alt="Checks en Windows, Linux y macOS"></a>
+  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.1"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.1-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.1"></a>
   <a href="#requisitos"><img src="https://img.shields.io/badge/Node.js-%E2%89%A5%2022.13-88d2b1?style=flat-square&amp;labelColor=171a20" alt="Node.js 22.13 o superior"></a>
 </p>
 
@@ -44,7 +44,7 @@ No inicies agentes ni modifiques el proyecto durante la instalación.
 En una terminal:
 
 ```sh
-npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.0 orquesta install
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.1 orquesta install
 ```
 
 Se instala **una vez para tu usuario**, con el asistente disponible en todos tus proyectos. No hace falta clonar Orquesta dentro de cada repo. Repetí el comando para reinstalar esta versión.
@@ -78,11 +78,15 @@ Abrí el chat o la terminal **dentro del repositorio donde querés trabajar**:
 
 | Dónde estás | Qué escribís |
 | --- | --- |
-| Chat de **Codex** | `$orquestar` — también disponible en `/skills` |
-| Chat de **Claude Code** | `/orquestar` |
+| Chat de **Codex** | `$orquesta` — también disponible en `/skills` |
+| Chat de **Claude Code** | `/orquesta` |
 | **Terminal** normal | `orquesta` |
 
 El asistente te guía para **elegir equipo → ajustar implementadores → escribir tarea → confirmar**. El menú del chat usa las preguntas que permite cada cliente; el panel visual se abre en el navegador.
+
+**En Codex, empezá escribiendo `$` y seleccioná `orquesta` de la lista.** También podés buscarla en `/skills`. `/orquesta` corresponde a Claude Code; no es un comando slash de Codex. Si instalaste con el chat abierto, reabrilo. Los accesos anteriores `$orquestar` y `/orquestar` siguen funcionando como alias.
+
+Si preferís escribirlo como una frase, pedí **«Abrí Orquesta en este proyecto y mostrame el menú de equipos»**. La skill permite esa invocación cuando el cliente la detecta.
 
 Podés usar el combo inicial **Astra + Opus**, elegir uno guardado o crear el tuyo:
 
@@ -140,7 +144,7 @@ La demo usa modelos simulados y ejecuta Git y tests reales. Incluye una consulta
 | Darle contexto a otro LLM | [llms.txt](llms.txt) |
 | Reportar un problema | [Issues](https://github.com/EmanuelMdz/orquesta/issues) |
 
-**Versión temprana, 0.2.0.** La suite cubre 25 pruebas y corre en Windows y Linux. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
+**Versión temprana, 0.2.1.** La suite cubre 25 pruebas. GitHub Actions comprueba Windows, Linux y macOS, e instala el paquete en un perfil vacío con caché y configuración propias antes de abrir dos repositorios de prueba. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
 
 Los worktrees separan los cambios; las pruebas y la preparación ejecutan código del proyecto. Una caída abrupta o un conflicto de integración puede necesitar revisión manual. [Alcance y límites →](docs/USAGE.md#alcance)
 

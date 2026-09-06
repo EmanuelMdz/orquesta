@@ -1,10 +1,10 @@
 ---
-name: orquestar
-description: Configura y ejecuta equipos de agentes con Orquesta en el repositorio actual. Usar cuando el usuario invoque orquestar, pida elegir un combo de agentes o quiera delegar y observar trabajo mediante Orquesta.
+name: orquesta
+description: Configura y ejecuta equipos de agentes con Orquesta en el repositorio actual. Usar cuando el usuario invoque orquesta u orquestar, pida elegir un combo de agentes o quiera delegar y observar trabajo mediante Orquesta.
 ---
 <!-- orquesta-managed-skill -->
 
-Usá Orquesta desde este chat. La aplicación conserva equipos predeterminados, configuración por proyecto, consultas, pruebas y el historial de agentes.
+Usá Orquesta desde este chat. Si se invoca sólo el nombre, empezá mostrando la selección de equipo del paso 1; no termines con una descripción de la herramienta ni una oferta de configurarla después. La aplicación conserva equipos predeterminados, configuración por proyecto, consultas, pruebas y el historial de agentes.
 
 El helper `launch.mjs` de esta misma carpeta apunta a la instalación de Orquesta. Ejecutá `node RUTA-DE-ESTA-SKILL/launch.mjs COMANDO --repo RUTA-DEL-PROYECTO`; así funciona aunque la terminal no encuentre `orquesta` en PATH. Usá rutas absolutas y argumentos estructurados cuando el host lo permita.
 

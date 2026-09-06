@@ -12,7 +12,7 @@ if (process.env.npm_config_global === 'true' && process.env.npm_execpath && proc
     if (current === realpathSync(join(root, 'orquesta-local'))) {
       const { installIntegrations } = await import('../dist/integrations.js');
       installIntegrations();
-      console.log('Orquesta lista: /orquestar en Claude, $orquestar en Codex, u orquesta en la terminal.');
+      console.log('Orquesta lista: $orquesta en Codex, /orquesta en Claude, u orquesta en la terminal. Reabrí los chats que estaban abiertos.');
     }
   } catch (error) {
     console.error('Orquesta instalada. Para activar los comandos de chat, ejecutá orquesta install. ' + error.message);

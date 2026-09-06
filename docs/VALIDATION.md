@@ -1,5 +1,16 @@
 # Validación
 
+## Versión 0.2.1 — instalación y primer uso
+
+La skill principal se llama `orquesta`; `orquestar` se conserva como alias. El instalador comprueba que los cuatro helpers ejecuten la versión instalada y muestra el comando exacto de cada cliente y el estado de sus conexiones.
+
+- Las 25 pruebas de la suite pasan localmente en Windows. La prueba de integración cubre ambos nombres, ejecución de los helpers, reinstalación y conservación de skills ajenas.
+- `npm run test:install` empaqueta el código y lo instala mediante `npm exec` en un perfil vacío, con prefijo global, caché y configuración de npm temporales. Usa rutas con espacios, elimina la caché después de instalar, ejecuta los helpers desde la copia permanente y abre dos repositorios Git sin cambios versionados. Este chequeo necesita conexión al registro de npm y no llama a modelos.
+- La instalación local de 0.2.1 detectó las sesiones de ambos proveedores. `skills/list` de Codex CLI 0.153.4, con `forceReload`, devolvió `orquesta` y `orquestar` habilitadas para otro proyecto, sin errores de carga. Esto comprueba descubrimiento real de la skill; no equivale a probar visualmente el autocompletado o un menú conversacional completo.
+- GitHub Actions ejecuta la suite, el empaquetado y la instalación desde un perfil vacío en Windows, Ubuntu y macOS. El estado actual está en [Checks](https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml).
+
+`--version` funciona sin cargar el motor SQLite. Las llamadas reales a modelos siguen limitadas a las pruebas históricas detalladas más abajo.
+
 ## Versión 0.2.0 — 6 de septiembre de 2026
 
 `npm test`: **25 pruebas aprobadas**, sin fallos, en Windows con Node 24.12.0. El runner usa un directorio personal temporal para que los combos reales del usuario no alteren las pruebas.

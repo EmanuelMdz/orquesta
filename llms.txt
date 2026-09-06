@@ -4,7 +4,7 @@
 > combos personales y un panel local para seguir decisiones, cambios y pruebas.
 
 Repositorio: https://github.com/EmanuelMdz/orquesta
-Versión de instalación documentada: v0.2.0
+Versión de instalación documentada: v0.2.1
 
 ## Instalar
 
@@ -14,7 +14,7 @@ Versión de instalación documentada: v0.2.0
 ## Usar y configurar
 
 - [Guía de uso](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/docs/USAGE.md): comandos, configuración por proyecto, combos y pruebas.
-- [Skill](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/integrations/orquestar/SKILL.md): flujo del asistente conversacional instalado.
+- [Skill](https://raw.githubusercontent.com/EmanuelMdz/orquesta/main/integrations/orquesta/SKILL.md): flujo del asistente conversacional instalado.
 
 ## Desarrollar
 

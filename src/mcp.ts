@@ -1,3 +1,4 @@
+import { version } from './version.js';
 import { createInterface } from 'node:readline';
 import { repository } from './config.js';
 import { openService, type Service } from './service.js';
@@ -27,7 +28,7 @@ export async function serveMcp(){
     if(message.id===undefined)continue;
     try{
       let result:any;
-      if(message.method==='initialize')result={protocolVersion:'2024-11-05',capabilities:{tools:{}},serverInfo:{name:'orquesta',version:'0.2.0'},instructions:'Orquesta dirige agentes Astra y Opus por proyecto. Al iniciar o reanudar, mostrá panel_url y seguí consultando status/events hasta un estado terminal. No inventes respuestas del usuario. No dupliques un inicio que ya devolvió run_id.'};
+      if(message.method==='initialize')result={protocolVersion:'2024-11-05',capabilities:{tools:{}},serverInfo:{name:'orquesta',version},instructions:'Orquesta dirige agentes Astra y Opus por proyecto. Al iniciar o reanudar, mostrá panel_url y seguí consultando status/events hasta un estado terminal. No inventes respuestas del usuario. No dupliques un inicio que ya devolvió run_id.'};
       else if(message.method==='ping')result={};
       else if(message.method==='tools/list')result={tools};
       else if(message.method==='tools/call'){

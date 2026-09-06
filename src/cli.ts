@@ -8,7 +8,8 @@ import { serveMcp } from './mcp.js';
 import { execute } from './process.js';
 import { openService, backgroundService } from './service.js';
 import { openBrowser } from './browser.js';
-import { installEverywhere } from './install.js';
+import { installEverywhere, installationSummary } from './install.js';
+import { version } from './version.js';
 import type { Event, Run } from './types.js';
 
 async function connectCodex(){
@@ -30,12 +31,12 @@ export async function main(argv:string[]){
   const{values,positionals}=parseArgs({args:argv,allowPositionals:true,options:{repo:{type:'string'},port:{type:'string'},ui:{type:'boolean'},'no-open':{type:'boolean'},json:{type:'boolean'},help:{type:'boolean'},version:{type:'boolean'},task:{type:'string'},file:{type:'string'},name:{type:'string'},default:{type:'boolean'},after:{type:'string'}}});
   const command=positionals[0]??'ui';
   const print=(data:unknown)=>console.log(values.json?JSON.stringify(data):typeof data==='string'?data:JSON.stringify(data,null,2));
-  if(values.version){print('0.2.0');return;}
+  if(values.version){print(version);return;}
   if(values.help||command==='help'){
-    print(`Orquesta 0.2.0 · Astra dirige, Opus implementa
+    print(`Orquesta ${version} · Astra dirige, Opus implementa
 
   orquesta                            Abre el panel de este proyecto
-  orquesta install                    Instala /orquestar en Claude y $orquestar en Codex
+  orquesta install                    Instala /orquesta en Claude y $orquesta en Codex
   orquesta launch                     Abre el menú y devuelve la terminal
   orquesta codex                      Abre Codex y el panel, conectados
   orquesta config                     Configuración visual de este proyecto
@@ -60,7 +61,7 @@ Opciones: --repo RUTA, --no-open, --port NUMERO, --json.
 Ctrl+C pausa si esta terminal inició el servicio. Las llamadas reales consumen tus cuentas.`);return;
   }
   if(command==='mcp'){await serveMcp();return;}
-  if(command==='install'){print(await installEverywhere());return;}
+  if(command==='install'){const report=await installEverywhere();print(values.json?report:installationSummary(report));return;}
   if(command==='connect-codex'){print(await connectCodex());return;}
   if(command==='doctor'){
     const repo=await repository(values.repo??process.cwd()).catch(()=>undefined);
