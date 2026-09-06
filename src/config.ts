@@ -5,14 +5,14 @@ import { homedir } from 'node:os';
 import { execute } from './process.js';
 import type { Config } from './types.js';
 import { defaultTeam } from './presets.js';
-export const defaults:Config={version:1,orchestratorProvider:'codex',implementerProvider:'claude',astraModel:'gpt-6-astra',opusModel:'opus',workers:2,maxCorrections:2,maxQuestions:3,maxCalls:40,timeoutMs:300000,agentTimeoutMs:1200000,maxContextBytes:160000,qaRoot:'test/orquesta',qaCommand:['node','--test'],checks:[],instructions:'',setupCommands:[]};
+export const defaults:Config={version:1,orchestratorProvider:'codex',implementerProvider:'claude',astraModel:'gpt-6-astra',opusModel:'opus',workers:2,maxCorrections:2,maxQuestions:3,maxCalls:40,timeoutMs:300000,agentTimeoutMs:0,agentIdleTimeoutMs:900000,maxContextBytes:160000,qaRoot:'test/orquesta',qaCommand:['node','--test'],checks:[],instructions:'',setupCommands:[]};
 export function validateConfig(input:unknown):Config{
   if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('La configuración debe ser un objeto.');
   const allowed=new Set([...Object.keys(defaults),'codexPath','claudePath']);
   for(const key of Object.keys(input))if(!allowed.has(key))throw new Error('Campo de configuración desconocido: '+key);
   const config={...structuredClone(defaults),...input} as Config;
   for(const key of ['orchestratorProvider','implementerProvider'] as const)if(!['codex','claude'].includes(config[key]??''))throw new Error('Proveedor inválido: '+key);
-  for(const [key,min,max] of [['workers',1,4],['maxCorrections',0,5],['maxQuestions',1,10],['maxCalls',1,200],['timeoutMs',1000,1800000],['agentTimeoutMs',1000,3600000],['maxContextBytes',1000,1000000]] as const){if(!Number.isInteger(config[key])||config[key]<min||config[key]>max)throw new Error('Configuración inválida: '+key);}
+  for(const [key,min,max] of [['workers',1,4],['maxCorrections',0,5],['maxQuestions',1,10],['maxCalls',1,200],['timeoutMs',1000,1800000],['agentTimeoutMs',0,86400000],['agentIdleTimeoutMs',0,86400000],['maxContextBytes',1000,1000000]] as const){if(!Number.isInteger(config[key])||config[key]<min||config[key]>max)throw new Error('Configuración inválida: '+key);}
   if(config.version!==1)throw new Error('Versión de configuración no soportada');
   if(!Array.isArray(config.qaCommand)||config.qaCommand.length===0||!config.qaCommand.every((x:unknown)=>typeof x==='string'&&x.length>0))throw new Error('qaCommand debe ser un array de comando y argumentos');
   for(const key of ['checks','setupCommands'] as const)if(!Array.isArray(config[key])||!config[key]!.every((x:any)=>x&&typeof x.name==='string'&&typeof x.command==='string'&&x.command.length>0&&Array.isArray(x.args)&&x.args.every((a:any)=>typeof a==='string')))throw new Error(key+' inválidos');

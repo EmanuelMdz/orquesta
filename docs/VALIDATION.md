@@ -1,5 +1,13 @@
 # Validación
 
+## Versión 0.2.4 — actividad y respuestas concurrentes
+
+38 pruebas aprobadas en Windows. Se comprueban respuestas que siguen generando más allá del intervalo de inactividad, cancelación con duración ilimitada, captura acotada de streams largos y detención pese a pings, reintentos y logs repetidos. El streaming de Claude agrega `--include-partial-messages`, sin cambiar el prompt ni pedir narración. Los fragmentos internos sólo acreditan actividad; no se almacenan en el historial visible.
+
+La prueba de concurrencia responde una pregunta humana mientras otro implementador continúa, verifica que las escrituras posteriores conservan la decisión y termina el circuito con pruebas independientes. Los reenvíos de una respuesta idéntica son idempotentes y una respuesta a una pregunta desactualizada se rechaza. La interfaz prueba fallos de envío, borradores, confirmación local y una sola petición de continuación por doble envío.
+
+Los registros locales existentes de Argos confirmaron `claude-opus-5` para ambos implementadores el 6 de septiembre de 2026. No se hicieron llamadas nuevas a modelos reales para verificarlo. Los adaptadores e interfaz se prueban con CLI simuladas, jsdom y HTTP/SSE real; no se afirma una revisión completa en navegador.
+
 ## Versión 0.2.3 — bloqueos y equipo real
 
 33 pruebas locales aprobadas en Windows. Se verificaron historiales antiguos con cinco tareas y dos implementadores, cola de tres tareas, reutilización de puestos en tareas sucesivas, mensajes concretos de recuperación y un único reintento por doble clic. Las lecturas conservan el contador de llamadas y la configuración persistida.

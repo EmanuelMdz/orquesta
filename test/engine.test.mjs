@@ -8,6 +8,7 @@ import { DemoProvider } from '../dist/providers.js';
 import { createDemo } from '../dist/demo.js';
 import { defaults } from '../dist/config.js';
 import { head,git } from '../dist/git.js';
+import { startServer } from '../dist/server.js';
 async function fixture(t,config={},provider=new DemoProvider(1)){
   const root=mkdtempSync(join(tmpdir(),'orq-test-'));const repo=await createDemo(root);const engine=new Engine(repo,{...defaults,...config},provider);
   t.after(async()=>{await engine.close();rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:200});});return{repo,engine};
@@ -26,13 +27,36 @@ test('pause and resume preserves persisted decisions and existing worktrees',asy
   const{engine}=await fixture(t);const run=await engine.create('pause','demo');delete run.config.agentTimeoutMs;engine.store.save(run);let paused=false;
   engine.on('event',event=>{if(!paused&&event.type==='decision.answered'){paused=true;engine.pause();}});
   const first=await engine.start(run.id);assert.equal(first.status,'paused');assert.equal(first.decisions.length,1);
-  assert.equal(first.config.agentTimeoutMs,1200000);assert.equal(first.config.timeoutMs,300000);
+  assert.equal(first.config.agentTimeoutMs,0);assert.equal(first.config.timeoutMs,300000);
   const second=await engine.start(run.id);assert.equal(second.status,'completed',second.error);assert.equal(second.decisions.length,1);
 });
 test('a real user question stays pending until explicitly answered',async t=>{
   const base=new DemoProvider(1);const provider={invoke:r=>r.phase==='decide'?Promise.resolve({value:{status:'needs_user',answer:'¿Usamos mundo?'}}):base.invoke(r)};
   const{engine}=await fixture(t,{},provider);const run=await engine.create('question','demo');const first=await engine.start(run.id);assert.equal(first.status,'waiting_user');assert.equal(first.tasks.find(t=>t.id==='saludo').pendingQuestion,'¿Usamos mundo?');await assert.rejects(engine.start(run.id),/pregunta/);
   await engine.answer(run.id,'saludo','Sí, mundo para nombres vacíos.');const result=await engine.start(run.id);assert.equal(result.status,'completed',result.error);assert.equal(result.decisions[0].source,'user');
+});
+
+test('a user can answer while another implementer works without losing the decision or duplicating it',async t=>{
+  const base=new DemoProvider(1);let releaseSlow,slow=false;
+  const provider={invoke:async r=>{
+    if(r.phase==='implement'&&r.task.id==='suma'&&!slow){slow=true;await new Promise(resolve=>{releaseSlow=resolve;r.signal.addEventListener('abort',resolve,{once:true});});}
+    if(r.phase==='decide')return{value:{status:'needs_user',answer:'¿Usamos mundo?'}};
+    return base.invoke(r);
+  }};
+  const{engine}=await fixture(t,{},provider);const run=await engine.create('Concurrent decision','demo');const working=engine.start(run.id);
+  const server=await startServer(engine);t.after(()=>server.close());
+  const send=()=>fetch(server.origin+'/api/answer',{method:'POST',headers:{Authorization:'Bearer '+server.token,'Content-Type':'application/json'},body:JSON.stringify({id:run.id,taskId:'saludo',answer:'Usar mundo',question:'¿Usamos mundo?',resume:true})});
+  for(let i=0;i<500&&!engine.store.get(run.id).tasks.some(task=>task.pendingQuestion);i++)await new Promise(resolve=>setTimeout(resolve,20));
+  assert(slow);assert(engine.running);assert(engine.store.get(run.id).tasks.some(task=>task.pendingQuestion));
+  try{
+    const response=await send();assert.equal(response.status,200);assert.equal((await response.json()).continuing,true);
+    assert.equal((await send()).status,200);
+    assert.equal(engine.store.get(run.id).decisions.length,1);assert(engine.running);
+    assert.equal(engine.store.get(run.id).status,'running');
+    await assert.rejects(engine.answer(run.id,'saludo','Respuesta desactualizada','Pregunta anterior'),/pregunta cambió/);
+  }finally{releaseSlow();}
+  const result=await working;assert.equal(result.status,'completed',result.error);assert.equal(result.decisions.length,1);assert.equal(result.decisions[0].answer,'Usar mundo');
+  assert.equal(engine.store.events(run.id).filter(event=>event.type==='decision.answered').length,1);
 });
 test('review approval cannot override failing executable tests',async t=>{
   const base=new DemoProvider(1);const provider={invoke:r=>r.phase==='review'?Promise.resolve({value:{verdict:'approved',summary:'Looks good',findings:[]}}):base.invoke(r)};

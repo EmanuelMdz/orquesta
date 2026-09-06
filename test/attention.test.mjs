@@ -18,7 +18,8 @@ test('blocked-run diagnostics distinguish capacity, timeouts, user decisions and
 
 test('older configurations gain the response timeout while retaining their existing limits',()=>{
   const legacy={...defaults,timeoutMs:300000,maxCalls:17};delete legacy.agentTimeoutMs;
-  const config=validateConfig(legacy);assert.equal(config.agentTimeoutMs,1200000);assert.equal(config.timeoutMs,300000);assert.equal(config.maxCalls,17);
+  const config=validateConfig(legacy);assert.equal(config.agentTimeoutMs,0);assert.equal(config.agentIdleTimeoutMs,900000);assert.equal(config.timeoutMs,300000);assert.equal(config.maxCalls,17);
   assert.equal(validateConfig({...legacy,agentTimeoutMs:1800000}).agentTimeoutMs,1800000);
-  for(const invalid of [0,-1,NaN,'1200000',3600001])assert.throws(()=>validateConfig({...legacy,agentTimeoutMs:invalid}),/agentTimeoutMs/);
+  assert.equal(validateConfig({...legacy,agentIdleTimeoutMs:0}).agentIdleTimeoutMs,0);
+  for(const invalid of [-1,NaN,'1200000',86400001])for(const field of ['agentTimeoutMs','agentIdleTimeoutMs'])assert.throws(()=>validateConfig({...legacy,[field]:invalid}),new RegExp(field));
 });

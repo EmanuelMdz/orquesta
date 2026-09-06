@@ -1,5 +1,11 @@
 # Arquitectura de Orquesta
 
+## Actividad y respuestas desde 0.2.4
+
+`execute` acepta duración total 0 y un watchdog de inactividad que sólo se renueva cuando el adaptador identifica progreso. Claude emite fragmentos nativos; se guardan metadatos de actividad como máximo cada cinco segundos, sin almacenar razonamiento ni pedir mensajes nuevos. La captura por cola acota la memoria sin cortar por el tamaño acumulado del stream; cada línea mantiene un límite de tamaño. El modelo resuelto se registra desde los eventos de la CLI.
+
+`Engine.answer` modifica la instancia activa del trabajo cuando otro implementador sigue ejecutándose, evitando que una copia persistida sobrescriba decisiones. La pregunta esperada permite rechazar respuestas desactualizadas y reconocer reenvíos idénticos. El panel solicita continuar tras responder; la API conserva el comportamiento de sólo guardar para clientes que omiten `resume`.
+
 ## Interrupciones y concurrencia desde 0.2.3
 
 `agentTimeoutMs` limita respuestas de proveedores (20 minutos por defecto); `timeoutMs` sigue limitando comandos y pruebas. Al reanudar, `validateConfig` completa campos nuevos de configuraciones antiguas sin cambiar los ajustes ya presentes. No se introducen reintentos ni llamadas adicionales.

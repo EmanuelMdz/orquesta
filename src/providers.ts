@@ -12,13 +12,29 @@ export class CliProvider implements Provider {
     if(!binary)throw new Error(`No se encontró ${name}. Ejecutá orquesta setup.`);
     const temp=mkdtempSync(join(tmpdir(),'orquesta-schema-'));
     const schemaPath=join(temp,'schema.json');writeFileSync(schemaPath,JSON.stringify(request.schema));
-    let session:string|undefined;let result:any;let finalText='';let providerError='';
+    let session:string|undefined;let result:any;let finalText='';let providerError='',resolvedModel='';let lastProgressReport=-Infinity;
     const args=claude?
-      ['-p','--model',model,'--effort','medium','--output-format','stream-json','--verbose','--json-schema',JSON.stringify(request.schema),'--tools','','--permission-mode','dontAsk','--strict-mcp-config','--no-chrome','--disable-slash-commands',...(request.session?['--resume',request.session]:[])]:
+      ['-p','--model',model,'--effort','medium','--output-format','stream-json','--verbose','--include-partial-messages','--json-schema',JSON.stringify(request.schema),'--tools','','--permission-mode','dontAsk','--strict-mcp-config','--no-chrome','--disable-slash-commands',...(request.session?['--resume',request.session]:[])]:
       ['exec','--model',model,'-c','model_reasoning_effort="medium"','-c','mcp_servers.orquesta={enabled=false,command="node"}','--sandbox','read-only','--json','--color','never','--output-schema',schemaPath,'-'];
     const command=binaryCommand(binary,args);
     const timeoutMs=this.config.agentTimeoutMs??defaults.agentTimeoutMs;
-    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model,phase:request.phase,timeoutMs});
+    const idleTimeoutMs=this.config.agentIdleTimeoutMs??defaults.agentIdleTimeoutMs;
+    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model,phase:request.phase,timeoutMs,idleTimeoutMs});
+    const milestones=new Set<string>();
+    const progress=(event:any)=>{
+      if(event.type==='stream_event'){
+        const inner=event.event,delta=inner?.delta;
+        // Only acknowledge generation, never pings, retries or stderr logs.
+        // Reasoning fragments are neither stored nor forwarded to the UI.
+        return inner?.type==='content_block_delta'&&['text_delta','thinking_delta','input_json_delta'].includes(delta?.type)&&[delta.text,delta.thinking,delta.partial_json].some(value=>typeof value==='string'&&value.length>0);
+      }
+      if(event.type==='assistant')return event.message?.content?.some((block:any)=>block.type==='tool_use'||(block.type==='text'&&block.text?.length>0)||(block.type==='thinking'&&block.thinking?.length>0))??false;
+      if(['item.started','item.updated','item.completed'].includes(event.type)&&['command_execution','agent_message','reasoning'].includes(event.item?.type)){
+        if(event.item.id&&event.type!=='item.updated'){const key=event.type+':'+event.item.id;if(milestones.has(key))return false;milestones.add(key);}
+        return true;
+      }
+      return false;
+    };
     const message=(text:string)=>{
       // Final structured proposals are represented by agent.result, not a second
       // giant JSON transcript. Forward existing conversational output only.
@@ -26,10 +42,12 @@ export class CliProvider implements Provider {
       if(text.trim())request.onEvent('agent.message',redact(text).slice(0,4000));
     };
     try{
-      const response=await execute(command.command,command.args,{cwd:request.cwd,input:request.prompt,signal:request.signal,timeoutMs,onLine:(line,stream)=>{
+      const response=await execute(command.command,command.args,{cwd:request.cwd,input:request.prompt,signal:request.signal,timeoutMs,idleTimeoutMs,captureOutput:'tail',onLine:(line,stream)=>{
         if(!line.trim())return;
         if(stream==='stderr'){request.onEvent('provider.log',redact(line).slice(0,3000));return;}
         let event:any;try{event=JSON.parse(line);}catch{return;}
+        const reported=event.type==='system'&&event.subtype==='init'?event.model:event.type==='assistant'?event.message?.model:event.type==='stream_event'&&event.event?.type==='message_start'?event.event.message?.model:undefined;
+        if(typeof reported==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9:._/-]{0,149}$/.test(reported)&&reported!==resolvedModel){resolvedModel=reported;request.onEvent('provider.model','Modelo informado: '+reported,{provider:name,requestedModel:model,resolvedModel:reported});}
         if(event.type==='thread.started')session=event.thread_id;
         if(event.session_id)session=event.session_id;
         if(event.type==='result'){
@@ -44,6 +62,10 @@ export class CliProvider implements Provider {
         if(event.type==='error'||event.type==='turn.failed')providerError=event.message||event.error?.message||'El proveedor devolvió un error';
         if(event.type==='assistant'){
           for(const block of event.message?.content??[]){if(block.type==='text'&&block.text)message(block.text);}
+        }
+        if(progress(event)){
+          const now=Date.now();if(now-lastProgressReport>=5000){lastProgressReport=now;request.onEvent('provider.progress','Actividad recibida del agente',{phase:request.phase,lastActivityAt:new Date(now).toISOString()});}
+          return true;
         }
       }});
       if(providerError||response.code!==0)throw new Error(redact(providerError||response.stderr||`${name} terminó con código ${response.code}`).slice(0,2000));

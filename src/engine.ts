@@ -23,6 +23,7 @@ export class Engine extends EventEmitter {
     const e=this.store.event({runId:run.id,time:new Date().toISOString(),role,type,message,taskId,workerId,data});this.emit('event',e);return e;
   }
   get running(){return this.activePromise!==undefined;}
+  get activeRunId(){return this.running?this.active?.id:undefined;}
   async create(objective:string,mode:'live'|'demo'='live'){
     if(!objective.trim()||objective.length>20000)throw new Error('Escribí un objetivo de entre 1 y 20000 caracteres.');
     if(this.running)throw new Error('Ya hay una ejecución activa.');
@@ -75,11 +76,18 @@ export class Engine extends EventEmitter {
     return this.activePromise;
   }
   async wait(){return this.activePromise;}
-  async answer(id:string,taskId:string,answer:string){
-    if(this.running)throw new Error('Esperá a que termine la pausa antes de responder.');
-    if(!answer.trim()||answer.length>20000)throw new Error('Respuesta vacía o demasiado larga.');const run=this.store.get(id);const task=run.tasks.find(t=>t.id===taskId);
+  async answer(id:string,taskId:string,answer:string,expectedQuestion?:string){
+    if(!answer.trim()||answer.length>20000)throw new Error('Respuesta vacía o demasiado larga.');
+    // Other implementers may still be running. Update their shared run object
+    // so their next save cannot overwrite the user's answer with an old copy.
+    const active=this.active?.id===id&&this.running;
+    const run=active?this.active!:this.store.get(id);const task=run.tasks.find(t=>t.id===taskId);
+    if(expectedQuestion!==undefined){
+      if(run.decisions.some(decision=>decision.taskId===taskId&&decision.question===expectedQuestion&&decision.answer===answer&&decision.source==='user'))return;
+      if(task?.pendingQuestion!==expectedQuestion)throw new Error('La pregunta cambió. Revisá la pregunta actual antes de enviar la respuesta.');
+    }
     if(!task?.pendingQuestion)throw new Error('Esa tarea no tiene una pregunta pendiente.');
-    run.decisions.push({taskId,question:task.pendingQuestion,answer,source:'user'});delete task.pendingQuestion;task.status='queued';delete task.error;run.status='paused';this.store.save(run);this.event(run,'user','decision.answered',answer,taskId);
+    run.decisions.push({taskId,question:task.pendingQuestion,answer,source:'user'});delete task.pendingQuestion;task.status='queued';delete task.error;if(!active)run.status='paused';this.store.save(run);this.event(run,'user','decision.answered',answer,taskId);
   }
   private async executeRun(run:Run):Promise<Run>{
     run.status='running';delete run.error;this.store.save(run);this.event(run,'system','run.started',run.mode==='demo'?'Demo: proveedores simulados, Git y pruebas reales.':'Ejecución real con Astra y Opus.');

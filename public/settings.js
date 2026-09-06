@@ -16,7 +16,8 @@
     if(disposed)return;
     for (const [key,id] of Object.entries(fields)) $(id).value = data.config[key] ?? '';
     $('cfg-timeout').value = data.config.timeoutMs / 1000;
-    $('cfg-agent-timeout').value = (data.config.agentTimeoutMs ?? 1200000) / 60000;
+    $('cfg-agent-timeout').value = (data.config.agentTimeoutMs ?? 0) / 60000;
+    $('cfg-agent-idle').value = (data.config.agentIdleTimeoutMs ?? 900000) / 60000;
     $('cfg-context').value = data.config.maxContextBytes / 1000;
     $('cfg-qa-command').value = data.qaCommandLine;
     $('cfg-checks').value = data.checksText;
@@ -45,6 +46,7 @@
     for (const [key,id] of Object.entries(fields)) config[key] = $(id).type === 'number' ? Number($(id).value) : $(id).value;
     config.timeoutMs = Number($('cfg-timeout').value) * 1000;
     config.agentTimeoutMs = Number($('cfg-agent-timeout').value) * 60000;
+    config.agentIdleTimeoutMs = Number($('cfg-agent-idle').value) * 60000;
     config.maxContextBytes = Number($('cfg-context').value) * 1000;
     return api('config', { config, qaCommandLine:$('cfg-qa-command').value, checksText:$('cfg-checks').value, setupText:$('cfg-setup').value });
   }

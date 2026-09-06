@@ -46,12 +46,15 @@ test('real SSE updates the map and Astra/System/Opus conversation with no extra 
   });
   const d=w.document;
   engine.event(run,'opus','provider.started','opus · implement','first',{phase:'implement'});
+  engine.event(run,'opus','provider.model','Modelo informado: claude-opus-5','first',{resolvedModel:'claude-opus-5'});
+  engine.event(run,'opus','provider.progress','Actividad recibida del agente','first',{lastActivityAt:new Date().toISOString()});
   engine.event(run,'astra','agent.message','Mensaje disponible de Astra');
   engine.event(run,'system','workspace.preparing','Entorno del segundo agente','second');
   await until(()=>d.querySelector('[data-agent="worker:1"]').classList.contains('busy'));
   assert.equal(d.querySelector('[data-agent="worker:2"]').classList.contains('busy'),false);
   assert(d.querySelector('[data-agent="system"]').classList.contains('busy'));
   assert.match(d.getElementById('live-text').textContent,/Opus 1/);
+  assert.match(d.getElementById('live-progress').textContent,/Opus 1: última señal/);
   engine.event(run,'opus','agent.result','Implementación lista','first');
   engine.event(run,'opus','decision.requested','Consulta del primer agente','first');
   engine.event(run,'astra','decision.answered','Respuesta de Astra','first');
@@ -59,6 +62,7 @@ test('real SSE updates the map and Astra/System/Opus conversation with no extra 
   assert.match(d.getElementById('feed').textContent,/Opus 1 → Astra/);
   assert.match(d.getElementById('feed').textContent,/Astra → Opus 1/);
   d.querySelector('[data-agent="worker:1"]').dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+  assert.match(d.getElementById('agent-detail').textContent,/Modelo informado: claude-opus-5/);
   assert(d.getElementById('feed').textContent.includes('Respuesta de Astra'));
   assert(!d.getElementById('feed').textContent.includes('Entorno del segundo agente'));
   d.getElementById('feed-all').click();assert(d.getElementById('feed').textContent.includes('Entorno del segundo agente'));
@@ -80,8 +84,8 @@ test('legacy five-task runs show two workers, three queued tasks and actionable 
   assert.equal(d.getElementById('queue-summary').textContent,'3 tareas pendientes');
   assert.equal(d.querySelectorAll('#queue-list li').length,3);
   assert.match(d.getElementById('recovery-message').textContent,/2 tareas interrumpidas.*5 min/);
-  assert.match(d.getElementById('recovery-hint').textContent,/20 min/);
-  assert.match(d.getElementById('recovery-hint').textContent,/usan llamadas de modelos/);
+  assert.match(d.getElementById('recovery-hint').textContent,/no tienen un tope de duración/);
+  assert.match(d.getElementById('recovery-hint').textContent,/usa llamadas de modelos/);
   assert.match(d.getElementById('run-error').textContent,/Entrega 0: Tiempo de espera/);
   assert.equal(d.getElementById('resume').textContent,'Reintentar pendientes →');
   assert.equal(engine.store.get(run.id).config.agentTimeoutMs,undefined,'Viewing old history must not rewrite it');
@@ -139,5 +143,29 @@ test('agent responses have a separate timeout from commands and still stop at th
   assert.equal(result.value.summary,'ok');assert.equal(events[0].data.timeoutMs,3000);
   await assert.rejects(new CliProvider({...defaults,claudePath:fake,timeoutMs:3000,agentTimeoutMs:100}).invoke(request),/Tiempo de espera agotado \(100 ms\)/);
   const legacy={...defaults,claudePath:fake};delete legacy.agentTimeoutMs;events.length=0;
-  await new CliProvider(legacy).invoke(request);assert.equal(events[0].data.timeoutMs,1200000);
+  await new CliProvider(legacy).invoke(request);assert.equal(events[0].data.timeoutMs,0);assert.equal(events[0].data.idleTimeoutMs,900000);
+});
+
+test('answer form keeps failed drafts and acknowledges sending with exactly one continuation request',async t=>{
+  const{w,engine,run}=await view(t,run=>{run.status='waiting_user';run.tasks=[{id:'question',title:'Decisión',status:'blocked',pendingQuestion:'¿Cuál es la regla?',checks:[],acceptance:[],dependsOn:[]}];});
+  let attempts=0,starts=0;const original=w.fetch;
+  engine.start=async()=>{starts++;};
+  w.fetch=(path,options)=>{
+    if(path==='/api/answer'){
+      attempts++;const body=JSON.parse(options.body);assert.equal(body.resume,true);assert.equal(body.question,'¿Cuál es la regla?');
+      if(attempts===1)return Promise.resolve({ok:false,json:async()=>({error:'Fallo de conexión simulado'})});
+    }
+    return original(path,options);
+  };
+  const d=w.document,input=d.getElementById('answer');input.value='Regla confirmada';input.dispatchEvent(new w.Event('input'));
+  d.getElementById('answer-form').dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));
+  await until(()=>d.getElementById('answer-feedback').textContent.includes('No se pudo enviar'));
+  assert.equal(input.value,'Regla confirmada');assert.equal(engine.store.get(run.id).decisions.length,0);
+  const draftKey=Array.from({length:w.sessionStorage.length},(_,i)=>w.sessionStorage.key(i)).find(key=>key.startsWith('orquesta-answer:'));
+  assert.equal(w.sessionStorage.getItem(draftKey),'Regla confirmada');assert.equal(d.getElementById('answer-feedback').hidden,false);
+  d.getElementById('answer-form').dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));
+  d.getElementById('answer-form').dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));
+  await until(()=>d.getElementById('question-box').hidden);
+  assert.equal(attempts,2);assert.equal(starts,1);assert.equal(engine.store.get(run.id).decisions[0].answer,'Regla confirmada');
+  assert.equal(w.sessionStorage.getItem(draftKey),null);assert.match(d.getElementById('answer-feedback').textContent,/Respuesta guardada/);
 });

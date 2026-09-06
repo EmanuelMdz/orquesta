@@ -62,7 +62,11 @@ export async function startServer(engine:Engine,options:{port?:number;demo?:bool
           }
           if(target.pathname==='/api/pause'){engine.pause();send(response,202,{status:'pause_requested'});return;}
           if(target.pathname==='/api/resume'){const id=String(body.id??'');if(engine.running)throw new Error('Ya hay trabajo activo');const run=engine.store.get(id);if(run.tasks.some(t=>t.pendingQuestion))throw new Error('Respondé la pregunta pendiente antes de reanudar.');void engine.start(id).catch(error=>engine.emit('backgroundError',error));send(response,202,{id});return;}
-          if(target.pathname==='/api/answer'){await engine.answer(String(body.id??''),String(body.taskId??''),String(body.answer??''));send(response,200,{status:'answered'});return;}
+          if(target.pathname==='/api/answer'){
+            const id=String(body.id??'');await engine.answer(id,String(body.taskId??''),String(body.answer??''),typeof body.question==='string'?body.question:undefined);
+            if(body.resume===true&&!engine.running&&!engine.store.get(id).tasks.some(task=>task.pendingQuestion))void engine.start(id).catch(error=>engine.emit('backgroundError',error));
+            send(response,200,{status:'answered',continuing:engine.activeRunId===id});return;
+          }
         }
         send(response,404,{error:'Ruta inexistente'});return;
       }

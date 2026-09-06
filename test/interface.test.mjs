@@ -27,6 +27,7 @@ test('dashboard loads API data, switches tabs, selects agents and records user a
   assert(w.document.querySelector('[data-agent="system"]'));assert(w.document.querySelector('[data-agent="worker:2"]'));
   w.document.getElementById('answer').value='Usar mundo';w.document.getElementById('answer-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
   await until(()=>engine.store.get(run.id).decisions.length===1);assert.equal(engine.store.get(run.id).decisions[0].answer,'Usar mundo');
+  await engine.wait();
   w.eval(readFileSync(new URL('../public/settings.js',import.meta.url),'utf8'));
   await until(()=>w.document.getElementById('project-detection').textContent.includes('Node.js'));
   w.document.getElementById('cfg-workers').value='3';w.document.getElementById('cfg-instructions').value='Mantener accesibilidad.';
