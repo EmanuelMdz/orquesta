@@ -9,6 +9,7 @@ import { acquireLock, assertClean, commitAll, createWorktree, git, head, isAnces
 import { cleanEnvironment, execute, redact } from './process.js';
 import { CliProvider, DemoProvider } from './providers.js';
 import { executable } from './commands.js';
+import { validateConfig } from './config.js';
 import type { Change, CheckResult, Config, Phase, Provider, Role, Run, Task } from './types.js';
 
 export class Engine extends EventEmitter {
@@ -66,7 +67,8 @@ export class Engine extends EventEmitter {
   async start(id:string):Promise<Run>{
     if(this.running)throw new Error('Ya hay una ejecución activa.');
     const run=this.store.get(id);if(run.status==='completed')return run;
-    if(run.config)this.config=structuredClone(run.config);
+    if(run.config)this.config=validateConfig(run.config);
+    run.config=structuredClone(this.config);
     if(run.tasks.some(t=>t.pendingQuestion))throw new Error('Hay una pregunta pendiente para vos. Respondela antes de reanudar.');
     const release=acquireLock(join(this.repo,'.orquesta'),run.id);this.controller=new AbortController();this.active=run;
     this.activePromise=this.executeRun(run).finally(()=>{release();this.activePromise=undefined;this.active=undefined;this.controller=undefined;});

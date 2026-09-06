@@ -1,9 +1,12 @@
 {
   "name": "orquesta-local",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "license": "UNLICENSED",
-  "repository": { "type": "git", "url": "git+https://github.com/EmanuelMdz/orquesta.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EmanuelMdz/orquesta.git"
+  },
   "description": "Astra dirige y revisa; Opus implementa. Orquestador local de agentes con terminal y panel en vivo.",
   "type": "module",
   "bin": {

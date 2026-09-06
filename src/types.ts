@@ -30,7 +30,7 @@ export interface Config {
   instructions?: string; setupCommands?: Check[];
   version: 1; astraModel: string; opusModel: string; codexPath?: string; claudePath?: string;
   workers: number; maxCorrections: number; maxQuestions: number; maxCalls: number;
-  timeoutMs: number; maxContextBytes: number; qaRoot: string; qaCommand: string[]; checks: Check[];
+  timeoutMs: number; agentTimeoutMs: number; maxContextBytes: number; qaRoot: string; qaCommand: string[]; checks: Check[];
 }
 export interface AgentRequest {
   phase: Phase; role: Role; cwd: string; prompt: string; schema: object; signal: AbortSignal;

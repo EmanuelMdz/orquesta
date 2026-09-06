@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execute, redact } from './process.js';
-import { findBinary, binaryCommand } from './config.js';
+import { findBinary, binaryCommand, defaults } from './config.js';
 import { validate } from './schemas.js';
 import type { AgentRequest, AgentResult, Config, Provider } from './types.js';
 export class CliProvider implements Provider {
@@ -17,7 +17,8 @@ export class CliProvider implements Provider {
       ['-p','--model',model,'--effort','medium','--output-format','stream-json','--verbose','--json-schema',JSON.stringify(request.schema),'--tools','','--permission-mode','dontAsk','--strict-mcp-config','--no-chrome','--disable-slash-commands',...(request.session?['--resume',request.session]:[])]:
       ['exec','--model',model,'-c','model_reasoning_effort="medium"','-c','mcp_servers.orquesta={enabled=false,command="node"}','--sandbox','read-only','--json','--color','never','--output-schema',schemaPath,'-'];
     const command=binaryCommand(binary,args);
-    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model,phase:request.phase});
+    const timeoutMs=this.config.agentTimeoutMs??defaults.agentTimeoutMs;
+    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model,phase:request.phase,timeoutMs});
     const message=(text:string)=>{
       // Final structured proposals are represented by agent.result, not a second
       // giant JSON transcript. Forward existing conversational output only.
@@ -25,7 +26,7 @@ export class CliProvider implements Provider {
       if(text.trim())request.onEvent('agent.message',redact(text).slice(0,4000));
     };
     try{
-      const response=await execute(command.command,command.args,{cwd:request.cwd,input:request.prompt,signal:request.signal,timeoutMs:this.config.timeoutMs,onLine:(line,stream)=>{
+      const response=await execute(command.command,command.args,{cwd:request.cwd,input:request.prompt,signal:request.signal,timeoutMs,onLine:(line,stream)=>{
         if(!line.trim())return;
         if(stream==='stderr'){request.onEvent('provider.log',redact(line).slice(0,3000));return;}
         let event:any;try{event=JSON.parse(line);}catch{return;}

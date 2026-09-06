@@ -67,6 +67,45 @@ test('real SSE updates the map and Astra/System/Opus conversation with no extra 
   assert.equal(d.getElementById('live-status').hidden,true);
   assert(requests.every(request=>request.method==='GET'));assert.equal(calls(),0);assert.equal(engine.store.get(run.id).calls,3);
 });
+
+test('legacy five-task runs show two workers, three queued tasks and actionable timeout recovery',async t=>{
+  const{w,engine,run,requests,calls}=await view(t,run=>{
+    run.status='blocked';run.calls=11;delete run.config.agentTimeoutMs;
+    run.error='Hay tareas bloqueadas o dependencias pendientes. Revisá los eventos.';
+    run.tasks=Array.from({length:5},(_,i)=>({id:'task'+i,title:'Entrega '+i,status:i<2?'blocked':'queued',attempts:0,questions:0,checks:[],acceptance:[],dependsOn:i<2?[]:['task0'],error:i<2?'Tiempo de espera agotado (300000 ms)':undefined}));
+  });
+  const d=w.document;
+  assert.equal(d.querySelectorAll('.map-node.worker').length,2);
+  assert.equal(d.querySelector('[data-agent="worker:3"]'),null);
+  assert.equal(d.getElementById('queue-summary').textContent,'3 tareas pendientes');
+  assert.equal(d.querySelectorAll('#queue-list li').length,3);
+  assert.match(d.getElementById('recovery-message').textContent,/2 tareas interrumpidas.*5 min/);
+  assert.match(d.getElementById('recovery-hint').textContent,/20 min/);
+  assert.match(d.getElementById('recovery-hint').textContent,/usan llamadas de modelos/);
+  assert.match(d.getElementById('run-error').textContent,/Entrega 0: Tiempo de espera/);
+  assert.equal(d.getElementById('resume').textContent,'Reintentar pendientes →');
+  assert.equal(engine.store.get(run.id).config.agentTimeoutMs,undefined,'Viewing old history must not rewrite it');
+  assert.equal(calls(),0);assert(requests.every(request=>request.method==='GET'));
+  let starts=0;engine.start=async id=>{assert.equal(id,run.id);starts++;};
+  d.getElementById('resume').click();d.getElementById('resume').click();
+  await until(()=>starts===1&&!d.getElementById('resume').disabled);
+  assert.equal(requests.filter(request=>request.path==='/api/resume').length,1);
+  assert.equal(engine.store.get(run.id).calls,11);
+});
+
+test('legacy sequential task events reuse display slots rather than creating more agents',async t=>{
+  const{w,engine,run}=await view(t,run=>{
+    run.status='running';run.tasks=Array.from({length:4},(_,i)=>({id:'t'+i,title:'Tarea '+i,status:i<2?'integrated':'implementing',checks:[],acceptance:[],dependsOn:[]}));
+  });
+  for(const id of ['t0','t1'])engine.event(run,'opus','task.started',id,id);
+  for(const id of ['t0','t1'])engine.event(run,'system','task.integrated',id,id);
+  for(const id of ['t2','t3']){engine.event(run,'opus','task.started',id,id);engine.event(run,'opus','provider.started','opus · implement',id,{phase:'implement'});}
+  engine.event(run,'opus','agent.result','Consulta','t2');engine.event(run,'opus','task.started','Segunda llamada de la misma tarea','t2');engine.event(run,'opus','provider.started','opus · implement','t2',{phase:'implement'});
+  await until(()=>w.document.querySelectorAll('.map-node.worker.busy').length===2);
+  assert.equal(w.document.querySelectorAll('.map-node.worker').length,2);
+  assert.match(w.document.querySelector('[data-agent="worker:1"]').textContent,/Tarea 2/);
+  assert.match(w.document.querySelector('[data-agent="worker:2"]').textContent,/Tarea 3/);
+});
 test('provider telemetry forwards existing messages and tool events without exposing reasoning or structured code',async t=>{
   const root=mkdtempSync(join(tmpdir(),'orquesta-telemetry-'));t.after(()=>rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:200}));
   for(const name of ['codex','claude']){
@@ -89,4 +128,16 @@ test('provider telemetry forwards existing messages and tool events without expo
     assert.equal(events.find(event=>event.type==='provider.started').data.phase,'plan');
     if(name==='codex')assert(events.some(event=>event.type==='tool.completed'&&event.data.exitCode===0));
   }
+});
+
+test('agent responses have a separate timeout from commands and still stop at their configured limit',async t=>{
+  const root=mkdtempSync(join(tmpdir(),'orquesta-timeout-'));t.after(()=>rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:200}));
+  const fake=join(root,'provider.js');
+  writeFileSync(fake,`process.stdin.resume();process.stdin.on('end',()=>setTimeout(()=>console.log(JSON.stringify({type:'result',structured_output:{summary:'ok'}})),250));`);
+  const events=[],request={role:'opus',phase:'implement',cwd:root,prompt:'Exact request',schema:{type:'object'},signal:new AbortController().signal,run:{},onEvent:(type,message,data)=>events.push({type,message,data})};
+  const result=await new CliProvider({...defaults,claudePath:fake,timeoutMs:50,agentTimeoutMs:3000}).invoke(request);
+  assert.equal(result.value.summary,'ok');assert.equal(events[0].data.timeoutMs,3000);
+  await assert.rejects(new CliProvider({...defaults,claudePath:fake,timeoutMs:3000,agentTimeoutMs:100}).invoke(request),/Tiempo de espera agotado \(100 ms\)/);
+  const legacy={...defaults,claudePath:fake};delete legacy.agentTimeoutMs;events.length=0;
+  await new CliProvider(legacy).invoke(request);assert.equal(events[0].data.timeoutMs,1200000);
 });

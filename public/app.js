@@ -5,6 +5,7 @@
   const token=location.hash.slice(1)||sessionStorage.getItem('orquesta-token');
   if(token){sessionStorage.setItem('orquesta-token',token);history.replaceState(null,'',location.pathname);}
   let state={runs:[],running:false,demo:false},runId=null,selectedAgent='all',selectedTask=null,tab='activity',events=[],lastSeq=0,pendingStart=null,renderedRun;
+  let workerAssignments=new Map(),retrying=false;
   const labels={created:'Preparada',running:'Trabajando',paused:'Pausada',waiting_user:'Esperando tu respuesta',blocked:'Bloqueada',completed:'Completada',queued:'En cola',implementing:'Escribiendo código',waiting_astra:'Esperando a Astra',testing:'En pruebas',reviewing:'En revisión',approved:'Aprobada',integrated:'Integrada'};
   const phases={plan:'Planificando',implement:'Escribiendo código',decide:'Resolviendo una consulta',tests:'Preparando pruebas',review:'Revisando código'};
   const eventLabels={'decision.requested':'Consulta','decision.answered':'Respuesta','task.correction':'Corrección','task.approved':'Entrega aprobada','files.changed':'Archivos modificados','check.started':'Prueba iniciada','check.completed':'Resultado de prueba','plan.created':'Plan','provider.started':'Trabajando','run.completed':'Completado','task.integrated':'Integración','decision.needs_user':'Pregunta para vos','task.assigned':'Asignación','task.started':'Tarea iniciada','agent.result':'Resultado','agent.message':'Mensaje','run.created':'Tarea confirmada','run.started':'Inicio','run.blocked':'Bloqueo','task.blocked':'Bloqueo','run.paused':'Pausa','workspace.preparing':'Preparando entorno','workspace.prepared':'Entorno listo','tool.started':'Consulta al proyecto','tool.completed':'Consulta completada','provider.log':'Log técnico','provider.usage':'Uso reportado','integration.testing':'Pruebas de integración'};
@@ -30,10 +31,34 @@
     finally{loading=false;if(reloadPending&&!disposed){reloadPending=false;schedule();}}
   }
   function schedule(){if(disposed||refreshTimer)return;refreshTimer=setTimeout(()=>{refreshTimer=null;load().catch(e=>error(e.message));},120);}
-  // New runs persist a numbered implementer slot. Older runs used one agent per
-  // task: retain that historical identity instead of inventing a slot assignment.
-  function workerId(taskId){const tasks=current()?.tasks||[];const index=tasks.findIndex(task=>task.id===taskId);return index<0?null:tasks[index].workerId||index+1;}
-  function eventWorker(event){return event.workerId||workerId(event.taskId);}
+  const workerCount=()=>Math.max(1,Math.min(4,Number(config().workers)||2));
+  const validWorker=id=>Number.isInteger(id)&&id>0&&id<=workerCount();
+  // Reconstruct display slots for old histories. Queued tasks are a backlog,
+  // never additional agents. New events carry the actual assigned slot.
+  function assignDisplayWorkers(){
+    const tasks=current()?.tasks||[],known=new Map(tasks.map(task=>[task.id,task])),active=new Map();workerAssignments=new Map();
+    const free=preferred=>validWorker(preferred)&&!active.has(preferred)?preferred:Array.from({length:workerCount()},(_,i)=>i+1).find(id=>!active.has(id));
+    for(const event of events){
+      if(event.type==='run.started')active.clear();
+      const task=known.get(event.taskId);if(!task)continue;
+      const slot=validWorker(event.workerId)?event.workerId:validWorker(task.workerId)?task.workerId:workerAssignments.get(task.id);
+      if(event.type==='task.assigned'||event.type==='task.started'||(!workerAssignments.has(task.id)&&event.role==='opus')){
+        for(const [id,owner] of active)if(owner===task.id)active.delete(id);
+        const assigned=validWorker(event.workerId)?event.workerId:free(slot);
+        if(assigned){workerAssignments.set(task.id,assigned);active.set(assigned,task.id);}
+      }
+      if(['task.blocked','task.approved','task.integrated'].includes(event.type))for(const [id,taskId] of active)if(taskId===task.id)active.delete(id);
+    }
+    for(const task of tasks){
+      if(validWorker(task.workerId))workerAssignments.set(task.id,task.workerId);
+      else if(!workerAssignments.has(task.id)&&(task.status!=='queued'||task.worktree)){
+        const used=new Set(workerAssignments.values());
+        workerAssignments.set(task.id,Array.from({length:workerCount()},(_,i)=>i+1).find(id=>!used.has(id))||1);
+      }
+    }
+  }
+  function workerId(taskId){return workerAssignments.get(taskId)||null;}
+  function eventWorker(event){return validWorker(event.workerId)?event.workerId:workerId(event.taskId);}
   function actor(event){
     if(event.role==='system'||event.type.startsWith('check.')||event.type==='integration.testing')return 'system';
     if(event.role==='astra'||event.role==='quality')return 'astra';
@@ -59,12 +84,12 @@
   }
   function team(){
     const run=current(),tasks=run?.tasks||[],calls=activity();
-    const count=Math.max(Number(config().workers)||2,...tasks.map(task=>workerId(task.id)||0));
+    const count=workerCount();
     const members=[{key:'astra',name:modelName('astra'),kind:'director',caption:'PLAN · DECISIONES · REVISIÓN'},...Array.from({length:count},(_,i)=>({key:'worker:'+(i+1),name:actorName('worker:'+(i+1)),kind:'worker',caption:'IMPLEMENTADOR'})),{key:'system',name:'System',kind:'system',caption:'ENTORNO · GIT · PRUEBAS'}];
     for(const member of members){
       const ownCalls=calls.filter(call=>call.actor===member.key);
       member.tasks=member.kind==='worker'?tasks.filter(task=>'worker:'+workerId(task.id)===member.key):[];
-      member.task=member.tasks.find(task=>!['integrated','approved','queued'].includes(task.status))||member.tasks.find(task=>task.status==='queued')||member.tasks.at(-1);
+      member.task=member.tasks.find(task=>ownCalls.some(call=>call.taskId===task.id))||member.tasks.find(task=>!['integrated','approved','queued'].includes(task.status))||member.tasks.find(task=>task.status==='queued')||member.tasks.at(-1);
       member.busy=ownCalls.length>0;
       member.since=ownCalls[0]?.since;
       member.status=member.busy?(phases[ownCalls[0].phase]||ownCalls[0].phase)+(ownCalls.length>1?' · '+ownCalls.length+' tareas':''):member.kind==='worker'?(member.task?(labels[member.task.status]||member.task.status):'Sin tareas asignadas'):'En espera';
@@ -82,6 +107,7 @@
   function selectAgent(key){selectedAgent=selectedAgent===key?'all':key;const member=team().find(m=>m.key===selectedAgent);selectedTask=member?.task?.id||null;renderTeam();renderFeed();renderTests();if(tab==='changes')loadDiff().catch(e=>error(e.message));}
   function renderTeam(){
     if(disposed)return;
+    assignDisplayWorkers();
     const members=team(),workers=members.filter(m=>m.kind==='worker'),rows=Math.ceil(workers.length/4),height=365+(rows-1)*135;
     const svg=svgNode('svg',{viewBox:'0 0 680 '+height,class:'team-map',role:'group','aria-label':'Mapa interactivo del equipo'});
     svg.append(svgNode('title',{},'Agentes conectados de Orquesta'),svgNode('desc',{},'Seleccioná un agente para filtrar la comunicación. La actividad proviene de eventos registrados.'));
@@ -113,6 +139,9 @@
     const focused=document.activeElement?.getAttribute('data-agent');$('agents').replaceChildren(svg);
     if(focused)$('agents').querySelector('[data-agent="'+focused+'"]')?.focus();
     $('team-count').textContent='1 director · '+workers.length+' implementadores';
+    const tasks=current()?.tasks||[],queued=tasks.filter(task=>task.status==='queued');
+    $('queue-summary').textContent=queued.length+' tareas pendientes';$('task-queue').hidden=!queued.length;$('queue-list').replaceChildren();
+    for(const task of queued){const item=node('li','',task.title);const waiting=task.dependsOn?.some(id=>tasks.find(other=>other.id===id)?.status!=='integrated');item.append(node('small','muted',waiting?'Espera una entrega anterior':'Lista para un implementador libre'));$('queue-list').append(item);}
     const busy=members.filter(m=>m.busy).length;$('map-state').textContent=busy?busy+' trabajando':labels[current()?.status]||'Listo para empezar';$('map-state').className='map-state'+(busy?' busy':'');
     const chosen=members.find(m=>m.key===selectedAgent);$('agent-detail').replaceChildren();
     if(chosen){$('agent-detail').append(node('strong','',chosen.name+' · '+chosen.status),node('div','',chosen.task?.title||(chosen.key==='astra'?'Planifica, resuelve consultas y revisa.':'Prepara el entorno, integra cambios y ejecuta pruebas.')));}
@@ -132,11 +161,14 @@
     $('run-select').replaceChildren();if(!state.runs.length)$('run-select').append(node('option','','Sin ejecuciones'));
     for(const item of state.runs){const option=node('option','',item.id+' · '+(labels[item.status]||item.status));option.value=item.id;option.selected=item.id===runId;$('run-select').append(option);}
     $('start').disabled=state.running;$('start').textContent=state.demo?'Repetir demo →':'Revisar tarea →';$('objective').disabled=state.demo;if(state.demo)$('objective').value='Implementar saludo y suma con consulta, revisión y pruebas.';
-    $('pause').disabled=!state.running;$('resume').hidden=!run||state.running||!['paused','blocked','waiting_user'].includes(run.status);$('resume').disabled=!!run?.tasks.some(task=>task.pendingQuestion);
+    $('pause').disabled=!state.running;
+    const attention=run?.attention;$('recovery').hidden=!attention||state.running;
+    $('recovery-title').textContent=attention?.title||'';$('recovery-message').textContent=shorten(attention?.message,260);$('recovery-hint').textContent=attention?.hint||'';
+    $('resume').hidden=!attention?.retryAllowed||state.running;$('resume').disabled=retrying||!!run?.tasks.some(task=>task.pendingQuestion);$('resume').textContent=retrying?'Continuando…':(attention?.retryLabel||'Continuar trabajo')+' →';
     const firstLine=run?.objective.split(/\r?\n/).map(line=>line.replace(/^#{1,6}\s+/, '').trim()).find(Boolean);
     $('goal').textContent=run?shorten(firstLine||'Tarea en curso',100):'Todo listo para empezar';
     $('full-objective').textContent=run?.objective||'';$('objective-details').hidden=!run;
-    $('run-error-details').hidden=!run?.error;$('run-error').textContent=run?.error||'';
+    $('run-error-details').hidden=!run?.error;$('run-error').textContent=[run?.error,...(attention?.details||[]).map(item=>item.title+': '+item.error)].filter(Boolean).join('\n\n');
     $('run-status').textContent=run?(labels[run.status]||run.status)+(run.status==='blocked'&&!run.tasks.length?' · El plan se bloqueó antes de iniciar implementadores.':''):modelName('astra')+' planifica y revisa. '+modelName('opus')+' implementa.';
     $('run-label').textContent=run?'TRABAJO '+run.id:'TU EQUIPO DE DESARROLLO';
     if(renderedRun!==runId){$('new-work').open=!run;$('objective-details').open=false;$('run-error-details').open=false;renderedRun=runId;}
@@ -181,7 +213,7 @@
   $('confirm-cancel').addEventListener('click',()=>{pendingStart=null;$('confirm-work').hidden=true;});
   $('confirm-start').addEventListener('click',async()=>{if(!pendingStart)return;error('');$('confirm-start').disabled=true;try{const result=await api('runs',pendingStart);pendingStart=null;$('confirm-work').hidden=true;chooseRun(result.id);await load();}catch(e){error(e.message);}finally{if(!disposed)$('confirm-start').disabled=false;}});
   $('pause').addEventListener('click',()=>api('pause',{}).then(load).catch(e=>error(e.message)));
-  $('resume').addEventListener('click',()=>api('resume',{id:runId}).then(load).catch(e=>error(e.message)));
+  $('resume').addEventListener('click',async()=>{if(retrying)return;retrying=true;render();error('');try{await api('resume',{id:runId});await load();}catch(e){error(e.message);}finally{retrying=false;if(!disposed)render();}});
   $('answer-form').addEventListener('submit',async event=>{event.preventDefault();const task=current()?.tasks.find(task=>task.pendingQuestion);if(!task)return;try{await api('answer',{id:runId,taskId:task.id,answer:$('answer').value});$('answer').value='';await load();}catch(e){error(e.message);}});
   async function stream(){
     try{

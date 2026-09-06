@@ -1,5 +1,13 @@
 # Validación
 
+## Versión 0.2.3 — bloqueos y equipo real
+
+33 pruebas locales aprobadas en Windows. Se verificaron historiales antiguos con cinco tareas y dos implementadores, cola de tres tareas, reutilización de puestos en tareas sucesivas, mensajes concretos de recuperación y un único reintento por doble clic. Las lecturas conservan el contador de llamadas y la configuración persistida.
+
+Con CLI simuladas se comprobó que una respuesta puede superar el límite de comandos y que se cancela al alcanzar su propio límite. Las configuraciones antiguas incorporan el nuevo límite de 20 minutos al reanudarse. El circuito de demo mantiene sus 11 llamadas y sus pruebas independientes; las pruebas y comandos conservan sus límites y cancelación.
+
+No se llamaron modelos reales ni se reanudó trabajo de Argos para esta validación. La disponibilidad de modelos depende del proveedor; aumentar el tiempo no garantiza una respuesta ni elimina otros bloqueos. La interfaz se comprobó con jsdom y HTTP/SSE reales, sin una revisión completa en navegador.
+
 ## Versión 0.2.2 — mapa y comunicación
 
 28 pruebas locales aprobadas. Los nuevos controles cubren el mapa en una planificación bloqueada, los dos implementadores configurados, la tarea completa plegada, filtrado de consultas y respuestas y actualizaciones mediante SSE real. Ninguna acción de lectura del panel invoca proveedores ni incrementa el contador de llamadas.

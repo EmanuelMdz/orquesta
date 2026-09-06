@@ -10,8 +10,9 @@ import { parseCommand, commandList, commandLine } from './commands.js';
 import { git } from './git.js';
 import { presetLibrary, savePreset } from './presets.js';
 import { isDeepStrictEqual } from 'node:util';
+import { runAttention } from './attention.js';
 const publicDirectory=fileURLToPath(new URL('../public/',import.meta.url));
-export function publicRun(run:Run){return{...run,tasks:run.tasks.map(({qaFiles,...task})=>({...task,qaFiles:qaFiles?.map(f=>({path:f.path}))}))};}
+export function publicRun(run:Run){return{...run,attention:runAttention(run),tasks:run.tasks.map(({qaFiles,...task})=>({...task,qaFiles:qaFiles?.map(f=>({path:f.path}))}))};}
 async function jsonBody(request:IncomingMessage){let body='';for await(const chunk of request){body+=chunk;if(body.length>50000)throw new Error('Solicitud demasiado grande');}return body?JSON.parse(body):{};}
 export async function startServer(engine:Engine,options:{port?:number;demo?:boolean;onShutdown?:()=>void}={}){
   const token=randomBytes(32).toString('hex');const clients=new Set<ServerResponse>();let url='';

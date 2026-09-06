@@ -9,6 +9,10 @@
   "timeoutMs": 300000,
   "maxContextBytes": 160000,
   "qaRoot": "test/orquesta",
-  "qaCommand": ["node", "--test"],
-  "checks": []
+  "qaCommand": [
+    "node",
+    "--test"
+  ],
+  "checks": [],
+  "agentTimeoutMs": 1200000
 }

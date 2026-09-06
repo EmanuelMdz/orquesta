@@ -1,5 +1,11 @@
 # Arquitectura de Orquesta
 
+## Interrupciones y concurrencia desde 0.2.3
+
+`agentTimeoutMs` limita respuestas de proveedores (20 minutos por defecto); `timeoutMs` sigue limitando comandos y pruebas. Al reanudar, `validateConfig` completa campos nuevos de configuraciones antiguas sin cambiar los ajustes ya presentes. No se introducen reintentos ni llamadas adicionales.
+
+`runAttention` deriva diagnósticos de los errores persistidos y se agrega a la representación pública de cada ejecución. Es una proyección de lectura: no guarda estado ni invoca proveedores. El mapa limita sus puestos a la concurrencia configurada; para eventos antiguos sin `workerId` reconstruye puestos visuales, mientras las tareas sin iniciar permanecen en una cola aparte.
+
 ## Actividad visual desde la versión 0.2.2
 
 El motor asigna un `workerId` numérico a cada tarea de un lote y lo copia a los eventos. Los eventos conservan el número histórico aunque una tarea cambie de puesto al reanudarse. Esa información sólo se usa para persistencia y presentación; no se agrega al prompt del proveedor.

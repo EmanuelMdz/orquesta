@@ -23,9 +23,10 @@ test('full pipeline: two workers, question, failed test, correction, exact commi
   assert.equal(result.calls,11,'Worker identities and activity events must not introduce provider calls');
 });
 test('pause and resume preserves persisted decisions and existing worktrees',async t=>{
-  const{engine}=await fixture(t);const run=await engine.create('pause','demo');let paused=false;
+  const{engine}=await fixture(t);const run=await engine.create('pause','demo');delete run.config.agentTimeoutMs;engine.store.save(run);let paused=false;
   engine.on('event',event=>{if(!paused&&event.type==='decision.answered'){paused=true;engine.pause();}});
   const first=await engine.start(run.id);assert.equal(first.status,'paused');assert.equal(first.decisions.length,1);
+  assert.equal(first.config.agentTimeoutMs,1200000);assert.equal(first.config.timeoutMs,300000);
   const second=await engine.start(run.id);assert.equal(second.status,'completed',second.error);assert.equal(second.decisions.length,1);
 });
 test('a real user question stays pending until explicitly answered',async t=>{

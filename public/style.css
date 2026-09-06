@@ -20,3 +20,9 @@
 @media(prefers-reduced-motion:reduce){.map-edge.busy,.busy .node-indicator,.live-dot{animation:none}}
 @media(max-width:1100px){.workspace{grid-template-columns:1fr}.map-pane{border-right:0;border-bottom:1px solid var(--line)}.map-canvas{max-width:760px;margin:0 auto}.team-map{max-height:380px}.feed{max-height:520px}}
 @media(max-width:540px){.map-heading{padding:17px 14px 4px}.map-heading p{font-size:11px}.map-state{font-size:10px}.map-pane .selected-detail{margin-left:16px;margin-right:16px}.map-legend{gap:13px}#agents.map-canvas{padding:0;overflow-x:auto}.team-map{min-width:500px;min-height:280px}.feed-toolbar{padding:10px 14px;gap:8px}.live-status{margin:10px 12px 0}.run-heading h1{font-size:18px}.map-pane{padding-bottom:14px}.run-heading .controls{padding-top:0}}
+/* Actionable interruption state and task backlog, separate from agent slots. */
+.recovery{margin:0 30px 24px;padding:20px 24px;border:1px solid var(--line);border-left:3px solid var(--warm);border-radius:10px;background:var(--panel);display:flex;align-items:center;justify-content:space-between;gap:24px}
+.recovery[hidden]{display:none}.recovery h2{font-size:17px;margin:0 0 8px}.recovery p{margin:6px 0;line-height:1.55;max-width:90ch}.recovery .muted{font-size:13px}.recovery button{flex-shrink:0}
+.task-queue{border-top:1px solid var(--line);margin:0 24px;padding:16px 0;font-size:13px}.task-queue summary{cursor:pointer;color:var(--muted)}.task-queue ul{padding-left:20px;margin-bottom:0}.task-queue li{padding:6px 0}.task-queue small{display:block;margin-top:4px}.objective-details #run-error{white-space:pre-wrap}
+@media(min-width:1400px){.recovery{margin-left:6vw;margin-right:6vw}}
+@media(max-width:700px){.recovery{margin-left:16px;margin-right:16px;padding:16px;align-items:stretch;flex-direction:column;gap:12px}}
