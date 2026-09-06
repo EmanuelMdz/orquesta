@@ -22,7 +22,9 @@ test('dashboard loads API data, switches tabs, selects agents and records user a
   await until(()=>w.document.getElementById('feed').textContent.includes('<img'));
   assert.equal(w.document.querySelector('#feed img'),null);assert.equal(w.location.hash,'');
   w.document.getElementById('tab-tests').click();assert.equal(w.document.getElementById('tests').hidden,false);assert(w.document.querySelector('.test-card'));
-  const agents=w.document.querySelectorAll('.agent');agents[1].click();assert.match(w.document.getElementById('agent-detail').textContent,/Backend/);
+  const agent=w.document.querySelector('[data-agent="worker:1"]');agent.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));assert.match(w.document.getElementById('agent-detail').textContent,/Backend/);
+  assert.match(w.document.getElementById('feed').textContent,/Opus 1 → Astra/);
+  assert(w.document.querySelector('[data-agent="system"]'));assert(w.document.querySelector('[data-agent="worker:2"]'));
   w.document.getElementById('answer').value='Usar mundo';w.document.getElementById('answer-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
   await until(()=>engine.store.get(run.id).decisions.length===1);assert.equal(engine.store.get(run.id).decisions[0].answer,'Usar mundo');
   w.eval(readFileSync(new URL('../public/settings.js',import.meta.url),'utf8'));

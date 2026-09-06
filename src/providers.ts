@@ -17,7 +17,13 @@ export class CliProvider implements Provider {
       ['-p','--model',model,'--effort','medium','--output-format','stream-json','--verbose','--json-schema',JSON.stringify(request.schema),'--tools','','--permission-mode','dontAsk','--strict-mcp-config','--no-chrome','--disable-slash-commands',...(request.session?['--resume',request.session]:[])]:
       ['exec','--model',model,'-c','model_reasoning_effort="medium"','-c','mcp_servers.orquesta={enabled=false,command="node"}','--sandbox','read-only','--json','--color','never','--output-schema',schemaPath,'-'];
     const command=binaryCommand(binary,args);
-    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model});
+    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model,phase:request.phase});
+    const message=(text:string)=>{
+      // Final structured proposals are represented by agent.result, not a second
+      // giant JSON transcript. Forward existing conversational output only.
+      try{JSON.parse(text);return;}catch{}
+      if(text.trim())request.onEvent('agent.message',redact(text).slice(0,4000));
+    };
     try{
       const response=await execute(command.command,command.args,{cwd:request.cwd,input:request.prompt,signal:request.signal,timeoutMs:this.config.timeoutMs,onLine:(line,stream)=>{
         if(!line.trim())return;
@@ -30,12 +36,13 @@ export class CliProvider implements Provider {
           result=event.structured_output;finalText=event.result??finalText;
           if(event.usage||event.total_cost_usd)request.onEvent('provider.usage','Uso reportado por el proveedor',{usage:event.usage,costUsd:event.total_cost_usd});
         }
-        if(event.type==='item.completed'&&event.item?.type==='agent_message')finalText=event.item.text??finalText;
+        if(event.type==='item.completed'&&event.item?.type==='agent_message'){finalText=event.item.text??finalText;message(event.item.text??'');}
         if(event.type==='item.started'&&event.item?.type==='command_execution')request.onEvent('tool.started',model+' está consultando el proyecto',{command:redact(event.item.command??'')});
+        if(event.type==='item.completed'&&event.item?.type==='command_execution')request.onEvent('tool.completed','Consulta al proyecto completada',{command:redact(event.item.command??''),exitCode:event.item.exit_code,output:redact(event.item.aggregated_output??'').slice(-4000)});
         if(event.type==='turn.completed'&&event.usage)request.onEvent('provider.usage','Uso reportado por Codex',event.usage);
         if(event.type==='error'||event.type==='turn.failed')providerError=event.message||event.error?.message||'El proveedor devolvió un error';
         if(event.type==='assistant'){
-          for(const block of event.message?.content??[]){if(block.type==='text'&&block.text)request.onEvent('agent.message',redact(block.text).slice(0,4000));}
+          for(const block of event.message?.content??[]){if(block.type==='text'&&block.text)message(block.text);}
         }
       }});
       if(providerError||response.code!==0)throw new Error(redact(providerError||response.stderr||`${name} terminó con código ${response.code}`).slice(0,2000));
@@ -48,6 +55,7 @@ export class CliProvider implements Provider {
 export class DemoProvider implements Provider {
   constructor(private delayMs=350){}
   async invoke(request:AgentRequest):Promise<AgentResult>{
+    request.onEvent('provider.started','Demo · '+request.phase,{provider:'demo',phase:request.phase});
     await new Promise<void>((resolve,reject)=>{const stop=()=>{clearTimeout(timer);reject(new Error('Ejecución pausada'));};const timer=setTimeout(()=>{request.signal.removeEventListener('abort',stop);resolve();},this.delayMs);if(request.signal.aborted)stop();else request.signal.addEventListener('abort',stop,{once:true});});
     request.onEvent('provider.demo','Proveedor simulado · '+request.phase);
     const write=(path:string,content:string)=>({path,content,action:'write' as const});let value:any;

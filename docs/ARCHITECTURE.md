@@ -1,5 +1,11 @@
 # Arquitectura de Orquesta
 
+## Actividad visual desde la versión 0.2.2
+
+El motor asigna un `workerId` numérico a cada tarea de un lote y lo copia a los eventos. Los eventos conservan el número histórico aunque una tarea cambie de puesto al reanudarse. Esa información sólo se usa para persistencia y presentación; no se agrega al prompt del proveedor.
+
+El panel dibuja un SVG interactivo a partir de estado y eventos. Agrupa planificación, decisiones y calidad bajo el orquestador; System representa entorno, Git y ejecución de pruebas. Las conexiones activas, estados y reloj se calculan localmente. SSE solicita actualizaciones a intervalos acotados, sin llamadas a modelos. Las CLI reenvían mensajes y consultas ya emitidas; se excluyen razonamiento interno y propuestas JSON completas del chat visible.
+
 ## Cambios de la versión 0.2
 
 `src/service.ts` mantiene un servicio local por proyecto con descriptor autenticado y lock de propietario. Las CLI y el MCP reutilizan el servicio activo por HTTP; así las órdenes de ambos clientes llegan al mismo motor y al mismo canal de eventos. `launch` puede iniciarlo en segundo plano, y `stop` pausa y cierra. Un cliente que reutiliza el servicio no lo cierra al terminar.

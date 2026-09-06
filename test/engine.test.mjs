@@ -18,6 +18,9 @@ test('full pipeline: two workers, question, failed test, correction, exact commi
   const events=engine.store.events(run.id);assert(events.some(e=>e.type==='decision.requested'));assert(events.some(e=>e.type==='decision.answered'));assert(events.some(e=>e.type==='check.completed'&&e.data.exitCode===1));assert(events.some(e=>e.type==='task.correction'));
   assert(result.tasks.every(t=>t.status==='integrated'));assert(result.checks.every(c=>c.exitCode===0&&c.sha===result.finalSha));assert.equal(await head(result.integration),result.finalSha);
   assert.match(readFileSync(join(result.integration,'src/greet.js'),'utf8'),/trim/);assert.equal(result.tasks.find(t=>t.id==='saludo').attempts,1);
+  assert.deepEqual([...new Set(result.tasks.map(task=>task.workerId))].sort(),[1,2]);
+  assert(events.filter(event=>event.role==='opus').every(event=>event.workerId===result.tasks.find(task=>task.id===event.taskId)?.workerId));
+  assert.equal(result.calls,11,'Worker identities and activity events must not introduce provider calls');
 });
 test('pause and resume preserves persisted decisions and existing worktrees',async t=>{
   const{engine}=await fixture(t);const run=await engine.create('pause','demo');let paused=false;

@@ -18,7 +18,8 @@ export class Engine extends EventEmitter {
   private activePromise?:Promise<Run>;
   constructor(readonly repo:string,public config:Config,private provider?:Provider){super();this.store=new Store(join(repo,'.orquesta'));}
   event(run:Run,role:Role,type:string,message:string,taskId?:string,data?:unknown){
-    const e=this.store.event({runId:run.id,time:new Date().toISOString(),role,type,message,taskId,data});this.emit('event',e);return e;
+    const workerId=taskId?run.tasks.find(task=>task.id===taskId)?.workerId:undefined;
+    const e=this.store.event({runId:run.id,time:new Date().toISOString(),role,type,message,taskId,workerId,data});this.emit('event',e);return e;
   }
   get running(){return this.activePromise!==undefined;}
   async create(objective:string,mode:'live'|'demo'='live'){
@@ -92,6 +93,13 @@ export class Engine extends EventEmitter {
         const batch:Task[]=[];const owned=new Set<string>();
         for(const task of ready){if(batch.length>=this.config.workers)break;if(task.allowedPaths.some(p=>owned.has(p.toLowerCase())))continue;batch.push(task);task.allowedPaths.forEach(p=>owned.add(p.toLowerCase()));}
         if(!batch.length){if(run.tasks.some(t=>t.pendingQuestion)){run.status='waiting_user';this.store.save(run);return run;}throw new Error('Hay tareas bloqueadas o dependencias pendientes. Revisá los eventos.');}
+        const assigned=new Set<number>();
+        for(const task of batch){
+          if(!task.workerId||task.workerId>this.config.workers||assigned.has(task.workerId))task.workerId=Array.from({length:this.config.workers},(_,i)=>i+1).find(id=>!assigned.has(id))!;
+          assigned.add(task.workerId);
+          this.event(run,'system','task.assigned',task.title,task.id);
+        }
+        this.store.save(run);
         const settled=await Promise.allSettled(batch.map(async task=>{
           try{await this.executeTask(run,task);}catch(error){task.status='blocked';task.error=redact((error as Error).message);this.store.save(run);this.event(run,'system','task.blocked',task.error,task.id);}
         }));

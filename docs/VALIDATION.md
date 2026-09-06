@@ -1,5 +1,15 @@
 # Validación
 
+## Versión 0.2.2 — mapa y comunicación
+
+28 pruebas locales aprobadas. Los nuevos controles cubren el mapa en una planificación bloqueada, los dos implementadores configurados, la tarea completa plegada, filtrado de consultas y respuestas y actualizaciones mediante SSE real. Ninguna acción de lectura del panel invoca proveedores ni incrementa el contador de llamadas.
+
+El circuito de demo conserva exactamente 11 llamadas simuladas; los números de implementador y sus eventos se agregan localmente. La telemetría reenvía mensajes y comandos existentes de CLI simuladas, conserva el prompt recibido y excluye bloques de razonamiento y propuestas JSON completas del chat visible.
+
+Se renderizó e inspeccionó el SVG real del mapa en estados de trabajo y bloqueo. La interfaz se verificó con jsdom y un servidor HTTP real; no hubo un navegador automatizable disponible para revisar la página completa. No se ejecutaron llamadas a modelos reales para esta actualización.
+
+Los cambios no reanudan un plan rechazado ni permiten que los implementadores modifiquen pruebas reservadas para calidad independiente. El error nuevo identifica la tarea y ruta que provocaron el rechazo.
+
 ## Versión 0.2.1 — instalación y primer uso
 
 La skill principal se llama `orquesta`; `orquestar` se conserva como alias. El instalador comprueba que los cuatro helpers ejecuten la versión instalada y muestra el comando exacto de cada cliente y el estado de sus conexiones.

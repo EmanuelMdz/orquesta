@@ -20,7 +20,7 @@ export function validatePlan(plan:Plan,config:Config){
   for(const task of plan.tasks){
     if(!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,39}$/.test(task.id)||ids.has(task.id))throw new Error('Identificador de tarea inválido o repetido');ids.add(task.id);
     const unique=new Set<string>();
-    for(const path of task.allowedPaths){safeRelative(path);const key=path.toLowerCase();if(key===qa.toLowerCase()||key.startsWith(qa.toLowerCase()+'/'))throw new Error('Opus no puede modificar las pruebas de Astra');if(unique.has(key))throw new Error('Ruta repetida en la tarea');unique.add(key);}
+    for(const path of task.allowedPaths){safeRelative(path);const key=path.toLowerCase();if(key===qa.toLowerCase()||key.startsWith(qa.toLowerCase()+'/'))throw new Error(`Plan bloqueado: la tarea ${task.id} asigna ${path} a un implementador. Opus no puede modificar las pruebas de Astra; ${qa}/ está reservado para calidad independiente.`);if(unique.has(key))throw new Error('Ruta repetida en la tarea');unique.add(key);}
   }
   const visited=new Set<string>(),visiting=new Set<string>();
   function visit(id:string){if(visited.has(id))return;if(visiting.has(id))throw new Error('El plan contiene dependencias cíclicas');const task=plan.tasks.find(t=>t.id===id);if(!task)throw new Error('Dependencia inexistente: '+id);visiting.add(id);for(const dep of task.dependsOn)visit(dep);visiting.delete(id);visited.add(id);}

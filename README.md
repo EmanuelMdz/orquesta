@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml"><img src="https://github.com/EmanuelMdz/orquesta/actions/workflows/check.yml/badge.svg" alt="Checks en Windows, Linux y macOS"></a>
-  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.1"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.1-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.1"></a>
+  <a href="https://github.com/EmanuelMdz/orquesta/tree/v0.2.2"><img src="https://img.shields.io/badge/versi%C3%B3n-0.2.2-a7beff?style=flat-square&amp;labelColor=171a20" alt="Versión 0.2.2"></a>
   <a href="#requisitos"><img src="https://img.shields.io/badge/Node.js-%E2%89%A5%2022.13-88d2b1?style=flat-square&amp;labelColor=171a20" alt="Node.js 22.13 o superior"></a>
 </p>
 
@@ -44,7 +44,7 @@ No inicies agentes ni modifiques el proyecto durante la instalación.
 En una terminal:
 
 ```sh
-npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.1 orquesta install
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.2 orquesta install
 ```
 
 Se instala **una vez para tu usuario**, con el asistente disponible en todos tus proyectos. No hace falta clonar Orquesta dentro de cada repo. Repetí el comando para reinstalar esta versión.
@@ -104,6 +104,12 @@ Los proveedores y modelos se eligen por rol, con **1 a 4 implementadores**. Abri
 
 El panel muestra **asignaciones, consultas, respuestas, cambios y pruebas** conforme suceden. Podés seleccionar una tarea, inspeccionar su diff, pausar el trabajo y responder cuando el director te consulta.
 
+![Mapa de ejemplo: Astra resuelve una consulta, Opus 1 implementa y Opus 2 espera su respuesta; System administra el entorno.](docs/assets/team-map-preview.png)
+
+El mapa permite seleccionar **Astra, System, Opus 1, Opus 2…** para filtrar la conversación. La tarea completa se despliega cuando la necesitás. Los estados, conexiones y tiempos se calculan a partir del registro local: **ver el panel no agrega llamadas ni tokens a los modelos**. Sólo se muestran mensajes que las CLI ya emiten; no se les pide narrar el progreso.
+
+El chat desde el que abrís Orquesta tiene su propia actividad: sus mensajes previos al inicio no forman parte de la ejecución. Si el plan queda bloqueado antes de asignar tareas, el mapa muestra a los implementadores sin comenzar.
+
 ```mermaid
 flowchart LR
   U["Vos · tarea y confirmación"] --> D["Director · plan"]
@@ -144,7 +150,7 @@ La demo usa modelos simulados y ejecuta Git y tests reales. Incluye una consulta
 | Darle contexto a otro LLM | [llms.txt](llms.txt) |
 | Reportar un problema | [Issues](https://github.com/EmanuelMdz/orquesta/issues) |
 
-**Versión temprana, 0.2.1.** La suite cubre 25 pruebas. GitHub Actions comprueba Windows, Linux y macOS, e instala el paquete en un perfil vacío con caché y configuración propias antes de abrir dos repositorios de prueba. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
+**Versión temprana, 0.2.2.** La suite cubre 28 pruebas. GitHub Actions comprueba Windows, Linux y macOS, e instala el paquete en un perfil vacío con caché y configuración propias antes de abrir dos repositorios de prueba. Se validó un circuito real Astra → Opus en Windows; los demás combos tienen pruebas de enrutamiento con CLI simuladas. El acceso a cada modelo depende de tu proveedor.
 
 Los worktrees separan los cambios; las pruebas y la preparación ejecutan código del proyecto. Una caída abrupta o un conflicto de integración puede necesitar revisión manual. [Alcance y límites →](docs/USAGE.md#alcance)
 

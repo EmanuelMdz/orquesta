@@ -1,6 +1,6 @@
 {
   "name": "orquesta-local",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "license": "UNLICENSED",
   "repository": { "type": "git", "url": "git+https://github.com/EmanuelMdz/orquesta.git" },

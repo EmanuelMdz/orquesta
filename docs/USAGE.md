@@ -11,7 +11,7 @@ El combo inicial usa **Astra para planificar, resolver dudas, crear pruebas y re
 Requisitos: Node.js 22.13 o superior y Git. Cada proveedor que uses necesita su CLI oficial instalada, sesión iniciada y acceso al modelo elegido. En Windows también se detectan las CLI de las extensiones de VS Code. Las ejecuciones reales consumen el uso de tus cuentas.
 
 ```powershell
-npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.1 orquesta install
+npx --yes --package=git+https://github.com/EmanuelMdz/orquesta.git#v0.2.2 orquesta install
 ```
 
 El instalador prepara el paquete, lo instala globalmente e instala la skill `orquesta` para ambos clientes. No necesitás copiar nada dentro de tus proyectos.
@@ -83,6 +83,12 @@ Los ajustes locales están en `.orquesta/config.json`, excluida mediante los met
 El director siempre realiza plan, decisiones y calidad. Los implementadores pueden trabajar en paralelo cuando sus archivos y dependencias lo permiten. La concurrencia admitida en esta versión es de 1 a 4 implementadores.
 
 ## Ver y controlar a los agentes
+
+El mapa muestra al orquestador, System y los implementadores numerados. Al seleccionar un agente, la comunicación se filtra incluyendo consultas y respuestas relacionadas. **Ver todos** recupera la conversación completa. La selección de tarea permite inspeccionar diffs y pruebas de cada entrega.
+
+La actividad visual usa eventos ya registrados, sin nuevas llamadas ni instrucciones a los modelos. Las CLI sólo aportan los mensajes que emiten durante la ejecución; cuando aún no hay respuesta, el panel indica la fase y el tiempo transcurrido. Los logs técnicos se pueden mostrar con una opción del panel. Los mensajes del chat externo que prepara o inicia Orquesta quedan fuera de este registro.
+
+El título de la tarea es breve y **Ver tarea completa** conserva las instrucciones originales. Un plan rechazado aparece como bloqueado con los implementadores todavía sin tareas. Las ejecuciones anteriores a 0.2.2 que no guardaron números de implementador conservan una identidad por tarea en su historial; las nuevas registran los números de los puestos de implementación.
 
 El panel muestra roles y tareas, mensajes explícitos entre agentes, consultas al orquestador, decisiones, diffs y resultados de pruebas. Son acciones y comunicaciones observables; no razonamiento privado interno ni terminales completas de cada modelo.
 

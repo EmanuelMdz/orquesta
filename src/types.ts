@@ -10,7 +10,7 @@ export interface Check { name: string; command: string; args: string[] }
 export interface CheckResult { name: string; command: string[]; exitCode: number; output: string; durationMs: number; sha: string }
 export interface Task extends TaskSpec {
   status: TaskStatus; worktree?: string; branch?: string; commit?: string; base?: string;
-  attempts: number; questions: number; workerSession?: string; qaFiles?: Change[];
+  attempts: number; questions: number; workerId?: number; workerSession?: string; qaFiles?: Change[];
   feedback?: string; checks: CheckResult[]; review?: { verdict: string; summary: string; findings: string[] };
   pendingQuestion?: string; error?: string;
 }
@@ -23,7 +23,7 @@ export interface Run {
 }
 export interface Event {
   seq?: number; runId: string; time: string; role: Role; type: string; message: string;
-  taskId?: string; data?: unknown;
+  taskId?: string; workerId?: number; data?: unknown;
 }
 export interface Config {
   orchestratorProvider?: 'codex'|'claude'; implementerProvider?: 'codex'|'claude';
