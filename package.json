@@ -1,8 +1,9 @@
 {
   "name": "orquesta-local",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "git+https://github.com/EmanuelMdz/orquesta.git" },
   "description": "Astra dirige y revisa; Opus implementa. Orquestador local de agentes con terminal y panel en vivo.",
   "type": "module",
   "bin": {
@@ -12,7 +13,9 @@
     "bin",
     "dist",
     "public",
+    "integrations",
     "README.md",
+    "INSTALL.md",
     "docs"
   ],
   "engines": {
@@ -21,12 +24,13 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test test/*.test.mjs",
+    "test": "npm run build && node scripts/test.mjs",
     "start": "node bin/orquesta.mjs",
     "demo": "node bin/orquesta.mjs demo --ui",
     "doctor": "node bin/orquesta.mjs doctor",
     "test:live": "npm run build && node scripts/live-smoke.mjs",
-    "prepack": "npm run build"
+    "postinstall": "node bin/register.mjs",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "ajv": "^8.17.1"

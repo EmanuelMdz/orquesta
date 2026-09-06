@@ -8,16 +8,16 @@ import type { AgentRequest, AgentResult, Config, Provider } from './types.js';
 export class CliProvider implements Provider {
   constructor(private config:Config){}
   async invoke(request:AgentRequest):Promise<AgentResult>{
-    const opus=request.role==='opus';const name=opus?'claude':'codex';const binary=findBinary(name,opus?this.config.claudePath:this.config.codexPath);
+    const opus=request.role==='opus';const name=opus?(this.config.implementerProvider??'claude'):(this.config.orchestratorProvider??'codex');const claude=name==='claude';const model=opus?this.config.opusModel:this.config.astraModel;const binary=findBinary(name,claude?this.config.claudePath:this.config.codexPath);
     if(!binary)throw new Error(`No se encontró ${name}. Ejecutá orquesta setup.`);
     const temp=mkdtempSync(join(tmpdir(),'orquesta-schema-'));
     const schemaPath=join(temp,'schema.json');writeFileSync(schemaPath,JSON.stringify(request.schema));
     let session:string|undefined;let result:any;let finalText='';let providerError='';
-    const args=opus?
-      ['-p','--model',this.config.opusModel,'--effort','medium','--output-format','stream-json','--verbose','--json-schema',JSON.stringify(request.schema),'--tools','','--permission-mode','dontAsk','--strict-mcp-config','--no-chrome','--disable-slash-commands',...(request.session?['--resume',request.session]:[])]:
-      ['exec','--model',this.config.astraModel,'-c','model_reasoning_effort="medium"','-c','mcp_servers.orquesta={enabled=false,command="node"}','--sandbox','read-only','--json','--color','never','--output-schema',schemaPath,'-'];
+    const args=claude?
+      ['-p','--model',model,'--effort','medium','--output-format','stream-json','--verbose','--json-schema',JSON.stringify(request.schema),'--tools','','--permission-mode','dontAsk','--strict-mcp-config','--no-chrome','--disable-slash-commands',...(request.session?['--resume',request.session]:[])]:
+      ['exec','--model',model,'-c','model_reasoning_effort="medium"','-c','mcp_servers.orquesta={enabled=false,command="node"}','--sandbox','read-only','--json','--color','never','--output-schema',schemaPath,'-'];
     const command=binaryCommand(binary,args);
-    request.onEvent('provider.started',`${opus?'Opus':'Astra'} · ${request.phase}`,{model:opus?this.config.opusModel:this.config.astraModel});
+    request.onEvent('provider.started',`${model} · ${request.phase}`,{provider:name,model});
     try{
       const response=await execute(command.command,command.args,{cwd:request.cwd,input:request.prompt,signal:request.signal,timeoutMs:this.config.timeoutMs,onLine:(line,stream)=>{
         if(!line.trim())return;
@@ -31,7 +31,7 @@ export class CliProvider implements Provider {
           if(event.usage||event.total_cost_usd)request.onEvent('provider.usage','Uso reportado por el proveedor',{usage:event.usage,costUsd:event.total_cost_usd});
         }
         if(event.type==='item.completed'&&event.item?.type==='agent_message')finalText=event.item.text??finalText;
-        if(event.type==='item.started'&&event.item?.type==='command_execution')request.onEvent('tool.started','Astra está consultando el proyecto',{command:redact(event.item.command??'')});
+        if(event.type==='item.started'&&event.item?.type==='command_execution')request.onEvent('tool.started',model+' está consultando el proyecto',{command:redact(event.item.command??'')});
         if(event.type==='turn.completed'&&event.usage)request.onEvent('provider.usage','Uso reportado por Codex',event.usage);
         if(event.type==='error'||event.type==='turn.failed')providerError=event.message||event.error?.message||'El proveedor devolvió un error';
         if(event.type==='assistant'){

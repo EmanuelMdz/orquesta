@@ -1,11 +1,43 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>Orquesta · Agentes en vivo</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>Orquesta · Agentes en vivo</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/settings.css"><script src="/app.js" defer></script><script src="/settings.js" defer></script></head>
 <body>
-<header class="topbar"><a class="brand" href="/" aria-label="Orquesta"><span class="logo">o</span>orquesta<span class="version">LOCAL / 0.1</span></a><div class="top-right"><span id="mode" class="mode">Conectando</span><span id="connection" class="connection">● Conectando</span></div></header>
+<header class="topbar"><a class="brand" href="/" aria-label="Orquesta"><span class="logo">o</span>orquesta<span class="version">LOCAL / 0.2</span></a><div class="top-right"><span id="mode" class="mode">Conectando</span><span id="connection" class="connection">● Conectando</span></div></header>
 <div id="error" class="error" role="alert" hidden></div>
 <section class="workspace-bar"><div><span class="eyebrow">PROYECTO</span><div id="repo" class="repo">Cargando…</div></div><label class="run-picker">Ejecución<select id="run-select" aria-label="Elegir ejecución"><option>Sin ejecuciones</option></select></label></section>
+<details id="project-settings" class="project-settings">
+<summary>Configurar este proyecto <span id="project-detection" class="muted"></span></summary>
+<form id="settings-form">
+<p class="muted">Estos ajustes se recuerdan sólo para este repositorio. Las ejecuciones nuevas usan la configuración guardada; las pausadas conservan la configuración con la que empezaron.</p>
+<div class="preset-bar"><label>Tu combo de agentes<select id="cfg-combo"><option value="">Personalizado</option></select></label><label>Nombre para guardar este combo<input id="preset-name" maxlength="80" placeholder="Ej.: Astra + 3 Opus"></label><label class="preset-default"><input id="preset-default" type="checkbox" checked> Preseleccionar en proyectos nuevos</label><button id="preset-save" type="button">Guardar combo</button></div>
+<div class="settings-grid">
+<label>CLI del orquestador<select id="cfg-orchestrator-provider"><option value="codex">Codex</option><option value="claude">Claude Code</option></select></label>
+<label>CLI de los implementadores<select id="cfg-implementer-provider"><option value="claude">Claude Code</option><option value="codex">Codex</option></select></label>
+<label>Modelo orquestador · plan, decisiones y calidad<input id="cfg-astra" name="astraModel" value="gpt-6-astra" required></label>
+<label>Modelo de los implementadores<input id="cfg-opus" name="opusModel" value="opus" required></label>
+<label>Implementadores a la vez<input id="cfg-workers" name="workers" type="number" min="1" max="4" value="2" required></label>
+<label>Límite de llamadas por trabajo<input id="cfg-calls" name="maxCalls" type="number" min="1" max="200" value="40" required></label>
+</div>
+<label class="settings-wide">Cómo debe trabajar el equipo<textarea id="cfg-instructions" name="instructions" rows="3" maxlength="20000" placeholder="Ej.: respetar el diseño actual, consultar cambios de arquitectura, escribir mensajes en español…"></textarea></label>
+<div class="settings-grid">
+<label>Ejecutor de pruebas<select id="cfg-preset"><option value="custom">Personalizado</option><option value="node">Node.js</option><option value="vitest">Vitest</option><option value="playwright">Playwright</option><option value="pytest">pytest</option></select></label>
+<label>Carpeta de pruebas de Astra<input id="cfg-qa-root" name="qaRoot" value="test/orquesta" required></label>
+</div>
+<label class="settings-wide">Comando para las pruebas de Astra<input id="cfg-qa-command" required value="node --test"><small class="muted">Orquesta agrega al final los archivos de prueba. El framework y su configuración deben incluir la carpeta elegida.</small></label>
+<label class="settings-wide">Preparar dependencias antes de trabajar <span class="muted">· opcional, un comando por línea</span><textarea id="cfg-setup" rows="2" placeholder="npm ci --ignore-scripts"></textarea></label>
+<label class="settings-wide">Comprobaciones adicionales <span class="muted">· opcional, un comando por línea</span><textarea id="cfg-checks" rows="2" placeholder="npm run build"></textarea></label>
+<details class="advanced-settings"><summary>Límites avanzados</summary><div class="settings-grid">
+<label>Rondas de corrección<input id="cfg-corrections" type="number" min="0" max="5" value="2" required></label>
+<label>Consultas a Astra por tarea<input id="cfg-questions" type="number" min="1" max="10" value="3" required></label>
+<label>Tiempo máximo por proceso (segundos)<input id="cfg-timeout" type="number" min="1" max="1800" value="300" required></label>
+<label>Contexto de archivos (KB)<input id="cfg-context" type="number" min="1" max="1000" value="160" required></label>
+</div></details>
+<div class="settings-actions"><button id="settings-save" class="primary" type="submit">Guardar configuración</button><button id="settings-doctor" type="button">Comprobar conexiones</button><span id="settings-status" role="status" aria-live="polite"></span></div>
+<pre id="doctor-result" class="doctor-result" hidden></pre>
+</form></details>
+<div id="project-readiness" class="project-readiness" role="status" hidden></div>
 <section class="new-work"><form id="start-form"><label for="objective">¿Qué querés construir?</label><div class="input-row"><textarea id="objective" rows="2" placeholder="Describí el cambio y cómo debería funcionar…" required maxlength="20000"></textarea><button id="start" type="submit" class="primary">Iniciar equipo →</button></div></form></section>
+<section id="confirm-work" class="confirm-work" hidden><span class="eyebrow">REVISAR ANTES DE INICIAR</span><p id="confirm-team"></p><p id="confirm-objective"></p><div class="controls"><button id="confirm-cancel" type="button">Volver</button><button id="confirm-start" type="button" class="primary">Confirmar e iniciar →</button></div></section>
 <section class="run-heading"><div><span class="eyebrow" id="run-label">TU EQUIPO DE DESARROLLO</span><h1 id="goal">Todo listo para empezar</h1><div id="run-status" class="muted">Astra planifica y revisa. Opus implementa.</div></div><div class="controls"><button id="pause" type="button" disabled>Pausar</button><button id="resume" type="button" hidden>Reanudar →</button></div></section>
 <section id="question-box" class="question-box" hidden><span class="eyebrow">ASTRA NECESITA TU RESPUESTA</span><p id="question-text"></p><form id="answer-form"><label for="answer">Tu decisión</label><div class="input-row"><textarea id="answer" rows="2" required maxlength="20000"></textarea><button class="primary" type="submit">Responder</button></div></form></section>
 <div class="workspace"><aside class="sidebar"><div class="sidebar-title"><span>EQUIPO</span><span id="team-count">Astra + Opus</span></div><div id="agents"></div><div class="selected-detail" id="agent-detail">Seleccioná una tarea para ver su actividad.</div></aside>

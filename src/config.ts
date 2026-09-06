@@ -1,23 +1,55 @@
-import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync, lstatSync, renameSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve, delimiter } from 'node:path';
 import { homedir } from 'node:os';
 import { execute } from './process.js';
 import type { Config } from './types.js';
-export const defaults:Config={version:1,astraModel:'gpt-6-astra',opusModel:'opus',workers:2,maxCorrections:2,maxQuestions:3,maxCalls:40,timeoutMs:300000,maxContextBytes:160000,qaRoot:'test/orquesta',qaCommand:['node','--test'],checks:[]};
-export function loadConfig(repo:string):Config{
-  const file=join(repo,'orquesta.config.json');const config={...defaults,...(existsSync(file)?JSON.parse(readFileSync(file,'utf8')):{})};
+import { defaultTeam } from './presets.js';
+export const defaults:Config={version:1,orchestratorProvider:'codex',implementerProvider:'claude',astraModel:'gpt-6-astra',opusModel:'opus',workers:2,maxCorrections:2,maxQuestions:3,maxCalls:40,timeoutMs:300000,maxContextBytes:160000,qaRoot:'test/orquesta',qaCommand:['node','--test'],checks:[],instructions:'',setupCommands:[]};
+export function validateConfig(input:unknown):Config{
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('La configuración debe ser un objeto.');
+  const allowed=new Set([...Object.keys(defaults),'codexPath','claudePath']);
+  for(const key of Object.keys(input))if(!allowed.has(key))throw new Error('Campo de configuración desconocido: '+key);
+  const config={...structuredClone(defaults),...input} as Config;
+  for(const key of ['orchestratorProvider','implementerProvider'] as const)if(!['codex','claude'].includes(config[key]??''))throw new Error('Proveedor inválido: '+key);
   for(const [key,min,max] of [['workers',1,4],['maxCorrections',0,5],['maxQuestions',1,10],['maxCalls',1,200],['timeoutMs',1000,1800000],['maxContextBytes',1000,1000000]] as const){if(!Number.isInteger(config[key])||config[key]<min||config[key]>max)throw new Error('Configuración inválida: '+key);}
   if(config.version!==1)throw new Error('Versión de configuración no soportada');
   if(!Array.isArray(config.qaCommand)||config.qaCommand.length===0||!config.qaCommand.every((x:unknown)=>typeof x==='string'&&x.length>0))throw new Error('qaCommand debe ser un array de comando y argumentos');
-  if(!Array.isArray(config.checks)||!config.checks.every((x:any)=>typeof x.name==='string'&&typeof x.command==='string'&&Array.isArray(x.args)&&x.args.every((a:any)=>typeof a==='string')))throw new Error('checks inválidos');
+  for(const key of ['checks','setupCommands'] as const)if(!Array.isArray(config[key])||!config[key]!.every((x:any)=>x&&typeof x.name==='string'&&typeof x.command==='string'&&x.command.length>0&&Array.isArray(x.args)&&x.args.every((a:any)=>typeof a==='string')))throw new Error(key+' inválidos');
+  for(const key of ['astraModel','opusModel'] as const)if(typeof config[key]!=='string'||!config[key].trim()||config[key].length>150)throw new Error('Modelo inválido: '+key);
+  if(typeof config.instructions!=='string'||config.instructions.length>20000)throw new Error('Las instrucciones admiten hasta 20000 caracteres.');
+  if(typeof config.qaRoot!=='string'||!/^([a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_-]+$/.test(config.qaRoot)||/^(node_modules|dist|bin)(\/|$)/.test(config.qaRoot))throw new Error('Carpeta de pruebas inválida.');
+  for(const key of ['codexPath','claudePath'] as const)if(config[key]!==undefined&&typeof config[key]!=='string')throw new Error('Ruta inválida: '+key);
   return config;
+}
+export function localDirectory(repo:string){
+  const dir=join(repo,'.orquesta');
+  if(existsSync(dir)&&lstatSync(dir).isSymbolicLink())throw new Error('.orquesta no puede ser un enlace o junction.');
+  return dir;
+}
+export function loadConfig(repo:string):Config{
+  const shared=join(repo,'orquesta.config.json'),local=join(localDirectory(repo),'config.json');
+  return validateConfig({...defaults,...(!existsSync(shared)&&!existsSync(local)?defaultTeam():{}),...(existsSync(shared)?JSON.parse(readFileSync(shared,'utf8')):{}),...(existsSync(local)?JSON.parse(readFileSync(local,'utf8')):{})});
 }
 export async function repository(path:string){const r=await execute('git',['rev-parse','--show-toplevel'],{cwd:resolve(path),timeoutMs:10000});if(r.code!==0)throw new Error('Elegí una carpeta con un repositorio Git.');return resolve(r.stdout.trim());}
 export function initialize(repo:string){
-  const file=join(repo,'orquesta.config.json');if(!existsSync(file))writeFileSync(file,JSON.stringify(defaults,null,2)+'\n');
-  const ignore=join(repo,'.gitignore');const content=existsSync(ignore)?readFileSync(ignore,'utf8'):'';
-  if(!content.split(/\r?\n/).includes('.orquesta/'))writeFileSync(ignore,content+(content.endsWith('\n')||!content?'':'\n')+'.orquesta/\n');
+  const dir=localDirectory(repo);mkdirSync(dir,{recursive:true});
+  const ignore=resolve(repo,execFileSync('git',['rev-parse','--git-path','info/exclude'],{cwd:repo,encoding:'utf8',windowsHide:true}).trim());
+  const content=existsSync(ignore)?readFileSync(ignore,'utf8'):'';
+  if(!content.split(/\r?\n/).includes('/.orquesta/')){mkdirSync(dirname(ignore),{recursive:true});writeFileSync(ignore,content+(content.endsWith('\n')||!content?'':'\n')+'/.orquesta/\n');}
+  const file=join(dir,'config.json');if(!existsSync(file))saveConfig(repo,loadConfig(repo));
   return file;
+}
+export function saveConfig(repo:string,value:unknown){
+  const config=validateConfig(value);const dir=localDirectory(repo);mkdirSync(dir,{recursive:true});
+  const file=join(dir,'config.json');if(existsSync(file)&&lstatSync(file).isSymbolicLink())throw new Error('La configuración no puede ser un enlace.');
+  const temporary=join(dir,'config.'+process.pid+'.tmp');writeFileSync(temporary,JSON.stringify(config,null,2)+'\n',{flag:'wx'});renameSync(temporary,file);return config;
+}
+export function projectInfo(repo:string){
+  let pkg:any={};try{pkg=JSON.parse(readFileSync(join(repo,'package.json'),'utf8'));}catch{}
+  const deps={...pkg.dependencies,...pkg.devDependencies};
+  const framework=deps.vitest?'Vitest':deps['@playwright/test']?'Playwright':existsSync(join(repo,'pyproject.toml'))?'Python':'Node.js';
+  return{name:pkg.name??repo.split(/[\\/]/).pop(),framework,scripts:pkg.scripts??{},npmLock:existsSync(join(repo,'package-lock.json'))};
 }
 export function findBinary(name:'codex'|'claude',configured?:string):string|undefined{
   if(configured){if(existsSync(configured))return resolve(configured);throw new Error('No existe el ejecutable configurado para '+name);}

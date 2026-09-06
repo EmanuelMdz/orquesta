@@ -1,0 +1,27 @@
+.project-settings { margin:0 28px 22px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+.project-settings > summary { padding:16px 20px; cursor:pointer; font-weight:600; color:var(--accent); }
+.project-settings > summary .muted { font-weight:400; font-size:12px; margin-left:8px; }
+.project-settings form { padding:0 20px 20px; max-width:1150px; }
+.settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:18px 0; }
+.settings-grid label,.settings-wide { display:flex; flex-direction:column; gap:7px; font-weight:500; }
+.settings-wide { margin:18px 0; }
+.project-settings input,.project-settings select,.project-settings textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px; color:var(--ink); background:var(--bg); }
+.project-settings textarea { resize:vertical; }
+.project-settings input:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.settings-wide small,.settings-wide .muted { font-weight:400; }
+.settings-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:20px; }
+.settings-actions [role=status] { color:var(--accent); }
+.advanced-settings > summary { cursor:pointer; padding:10px 0; color:var(--muted); }
+.doctor-result { white-space:pre-wrap; padding:14px; background:var(--side); border-radius:7px; }
+.project-readiness { margin:0 28px 20px; padding:14px 18px; background:var(--warmbg); color:var(--warm); border-radius:8px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.preset-bar { display:flex; flex-wrap:wrap; gap:14px; padding:16px; border-radius:8px; background:var(--soft); align-items:end; }
+.preset-bar label { display:flex; flex:1 1 200px; flex-direction:column; gap:7px; }
+.preset-bar .preset-default { flex-direction:row; align-items:center; font-size:12px; }
+.preset-default input { width:auto; }
+.confirm-work { margin:0 28px 22px; padding:20px; border:1px solid var(--accent); border-radius:10px; background:var(--soft); }
+.confirm-work p { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:650px) {
+  .project-settings,.project-readiness { margin-left:14px; margin-right:14px; }
+  .settings-grid { grid-template-columns:1fr; }
+  .settings-actions { align-items:stretch; flex-direction:column; }
+}

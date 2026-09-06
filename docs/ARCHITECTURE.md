@@ -1,4 +1,20 @@
-# Arquitectura de Orquesta 0.1
+# Arquitectura de Orquesta
+
+## Cambios de la versión 0.2
+
+`src/service.ts` mantiene un servicio local por proyecto con descriptor autenticado y lock de propietario. Las CLI y el MCP reutilizan el servicio activo por HTTP; así las órdenes de ambos clientes llegan al mismo motor y al mismo canal de eventos. `launch` puede iniciarlo en segundo plano, y `stop` pausa y cierra. Un cliente que reutiliza el servicio no lo cierra al terminar.
+
+`src/config.ts` guarda los ajustes locales en `.orquesta/config.json` y registra la exclusión en los metadatos de Git, sin modificar archivos versionados. `src/presets.ts` guarda equipos personales, y el combo predeterminado se aplica a proyectos nuevos. Cada ejecución conserva su propia configuración.
+
+Los proveedores se eligen por rol: `orchestratorProvider` y `implementerProvider`. Los campos históricos `astraModel` y `opusModel` contienen respectivamente el modelo director y el implementador; el transporte ya no depende del nombre interno del rol. El director sigue siendo responsable de decisiones y QA independiente.
+
+`public/settings.js` implementa la configuración visual y los combos. El formulario de tarea muestra equipo y objetivo antes de confirmar. Si cambia la configuración entre la revisión y la confirmación, el servidor exige revisarla de nuevo.
+
+`integrations/orquestar/SKILL.md` contiene el asistente conversacional para ambos chats. `src/integrations.ts` instala copias personales con un helper que apunta al paquete instalado. El postinstall sólo registra skills desde la ubicación global final, nunca desde un checkout temporal de npm. No cambia políticas de aprobación.
+
+Los comandos de preparación del proyecto se ejecutan antes de trabajar en cada worktree. Deben dejar intactos sus archivos versionados. La configuración del framework sigue siendo responsabilidad del proyecto.
+
+El flujo central de implementación, QA y Git se conserva como se describe abajo; Astra/Opus son los modelos del combo inicial.
 
 ## Flujo
 

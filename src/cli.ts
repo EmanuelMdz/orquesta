@@ -1,52 +1,148 @@
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
-import { Engine } from './engine.js';
+import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { defaults, doctor, initialize, loadConfig, repository, findBinary, binaryCommand } from './config.js';
 import { createDemo } from './demo.js';
-import { startServer } from './server.js';
 import { serveMcp } from './mcp.js';
 import { execute } from './process.js';
-import type { Event } from './types.js';
+import { openService, backgroundService } from './service.js';
+import { openBrowser } from './browser.js';
+import { installIntegrations } from './integrations.js';
+import type { Event, Run } from './types.js';
+
+async function connectCodex(){
+  const binary=findBinary('codex');if(!binary)throw new Error('No se encontró codex.');
+  const entry=fileURLToPath(new URL('../bin/orquesta.mjs',import.meta.url));
+  const lookup=binaryCommand(binary,['mcp','get','orquesta','--json']);
+  const existing=await execute(lookup.command,lookup.args,{timeoutMs:30000});
+  if(existing.code===0){
+    const saved=JSON.parse(existing.stdout);const transport=saved.transport??saved;
+    if(transport.command===process.execPath&&JSON.stringify(transport.args)===JSON.stringify([entry,'mcp']))return 'Orquesta ya está conectada. Reiniciá la sesión de Codex que estuviera abierta.';
+    throw new Error('Ya existe otro servidor llamado orquesta. Se conservó su configuración. Podés usar orquesta codex para conectarte sólo en esta sesión.');
+  }
+  const call=binaryCommand(binary,['mcp','add','orquesta','--',process.execPath,entry,'mcp']);
+  const result=await execute(call.command,call.args,{timeoutMs:30000});if(result.code)throw new Error(result.stderr);
+  return 'Orquesta conectada. Reiniciá la sesión de Codex que estuviera abierta.';
+}
+
 export async function main(argv:string[]){
-  const{values,positionals}=parseArgs({args:argv,allowPositionals:true,options:{repo:{type:'string'},port:{type:'string'},ui:{type:'boolean'},json:{type:'boolean'},help:{type:'boolean'},task:{type:'string'}}});
-  const command=positionals[0]??'ui';const print=(data:unknown)=>console.log(values.json?JSON.stringify(data):typeof data==='string'?data:JSON.stringify(data,null,2));
+  const{values,positionals}=parseArgs({args:argv,allowPositionals:true,options:{repo:{type:'string'},port:{type:'string'},ui:{type:'boolean'},'no-open':{type:'boolean'},json:{type:'boolean'},help:{type:'boolean'},version:{type:'boolean'},task:{type:'string'},file:{type:'string'},name:{type:'string'},default:{type:'boolean'},after:{type:'string'}}});
+  const command=positionals[0]??'ui';
+  const print=(data:unknown)=>console.log(values.json?JSON.stringify(data):typeof data==='string'?data:JSON.stringify(data,null,2));
+  if(values.version){print('0.2.0');return;}
   if(values.help||command==='help'){
-    print(`Orquesta 0.1.0 · Astra dirige, Opus implementa\n\n  orquesta setup                     Configura este proyecto y comprueba las CLI\n  orquesta doctor                    Detecta CLI y estado de sesión\n  orquesta run "objetivo" --ui        Trabajo real y panel local\n  orquesta demo --ui                  Demo aislada, sin llamadas a modelos\n  orquesta ui                        Panel del proyecto\n  orquesta status [run_id]            Estado guardado\n  orquesta inspect run_id --task ID   Diff de una entrega\n  orquesta resume run_id --ui         Reanudar\n  orquesta answer run_id task_id "respuesta"\n  orquesta connect-codex              Registra la tool MCP en tu Codex\n\nOpciones: --repo RUTA, --port NUMERO, --json. Ctrl+C pausa y conserva cambios.\nLas ejecuciones reales consumen tu uso de Codex y Claude. No hay fallback automático de modelos.`);return;
+    print(`Orquesta 0.2.0 · Astra dirige, Opus implementa
+
+  orquesta                            Abre el panel de este proyecto
+  orquesta install                    Instala /orquestar en Claude y $orquestar en Codex
+  orquesta launch                     Abre el menú y devuelve la terminal
+  orquesta codex                      Abre Codex y el panel, conectados
+  orquesta config                     Configuración visual de este proyecto
+  orquesta run "objetivo" --ui         Inicia trabajo y abre el panel
+  orquesta demo --ui                   Demo aislada sin llamadas a modelos
+  orquesta doctor                     Comprueba Codex y Claude
+  orquesta status [run_id]             Estado guardado
+  orquesta inspect run_id --task ID    Cambios de una entrega
+  orquesta pause                      Pausa el trabajo del proyecto
+  orquesta resume run_id --ui          Reanuda una ejecución
+  orquesta answer run_id task_id "respuesta"
+  orquesta connect-codex               Conexión permanente al comando codex
+  orquesta describe --json             Configuración y combos para el asistente
+  orquesta configure --file CONFIG     Guarda configuración de este proyecto
+  orquesta preset --name "NOMBRE" --default
+  orquesta start --file TAREA --json   Inicia y devuelve el ID inmediatamente
+  orquesta events run_id --after 0     Actividad incremental
+  orquesta stop                       Pausa y cierra el servicio del proyecto
+
+No hace falta setup ni un commit de configuración. Los ajustes se guardan por proyecto.
+Opciones: --repo RUTA, --no-open, --port NUMERO, --json.
+Ctrl+C pausa si esta terminal inició el servicio. Las llamadas reales consumen tus cuentas.`);return;
   }
   if(command==='mcp'){await serveMcp();return;}
-  if(command==='doctor'){const info=await doctor(defaults);if(values.json)print(info);else{print('Node '+info.node);for(const p of info.providers)print(`${p.installed?'✓':'✗'} ${p.name}: ${p.path??'no encontrado'}\n  ${p.message}`);}return;}
-  if(command==='connect-codex'){
-    const binary=findBinary('codex');if(!binary)throw new Error('No se encontró codex');const entry=fileURLToPath(new URL('../bin/orquesta.mjs',import.meta.url));
-    const lookup=binaryCommand(binary,['mcp','get','orquesta','--json']);
-    const existing=await execute(lookup.command,lookup.args,{timeoutMs:30000});
-    if(existing.code===0){
-      const saved=JSON.parse(existing.stdout);const transport=saved.transport??saved;
-      if(transport.command===process.execPath&&JSON.stringify(transport.args)===JSON.stringify([entry,'mcp'])){print('Orquesta ya está conectada a Codex. Reiniciá tu sesión codex para cargar sus herramientas.');return;}
-      throw new Error('Ya existe un servidor MCP llamado orquesta con otra configuración. Se conservó sin cambios. Revisalo con codex mcp get orquesta.');
-    }
-    const call=binaryCommand(binary,['mcp','add','orquesta','--',process.execPath,entry,'mcp']);
-    const r=await execute(call.command,call.args,{timeoutMs:30000});if(r.code)throw new Error(r.stderr);print(r.stdout);print('Reiniciá tu sesión codex para cargar las herramientas de Orquesta.');return;
+  if(command==='install'){print(installIntegrations());return;}
+  if(command==='connect-codex'){print(await connectCodex());return;}
+  if(command==='doctor'){
+    const repo=await repository(values.repo??process.cwd()).catch(()=>undefined);
+    print(await doctor(repo?loadConfig(repo):defaults));return;
   }
+  const allowed=['ui','config','codex','setup','init','run','demo','status','inspect','pause','resume','answer','launch','start','describe','configure','preset','events','stop'];
+  if(!allowed.includes(command))throw new Error('Comando desconocido. Ejecutá orquesta --help.');
   const repo=command==='demo'?await createDemo(values.repo??process.cwd()):await repository(values.repo??process.cwd());
-  if(command==='setup'||command==='init'){
-    print('Configuración: '+initialize(repo));const info=await doctor(loadConfig(repo));for(const p of info.providers)print(`${p.name}: ${p.message}`);print('Revisá y guardá orquesta.config.json y .gitignore con Git antes de ejecutar.');return;
-  }
-  const engine=new Engine(repo,loadConfig(repo));let panel:Awaited<ReturnType<typeof startServer>>|undefined;
-  const log=(event:Event)=>{if(values.json){console.log(JSON.stringify(event));return;}if(event.type==='provider.log'||event.type==='provider.usage')return;const color=process.stdout.isTTY?(event.role==='opus'?'\x1b[33m':event.role==='quality'?'\x1b[32m':'\x1b[36m'):'';console.log(`${color}${event.time.slice(11,19)} ${event.role.toUpperCase()}${event.taskId?' ['+event.taskId+']':''}${color?'\x1b[0m':''}  ${event.message}`);};
-  engine.on('event',log);engine.on('backgroundError',error=>console.error('Orquesta:',error.message));
+  if(command==='setup'||command==='init'){print('Configuración local: '+initialize(repo));print('Listo. Ejecutá orquesta para abrir el panel.');return;}
+  const port=values.port===undefined?0:Number(values.port);
+  if(!Number.isInteger(port)||port<0||port>65535)throw new Error('Puerto inválido.');
+  const service=['launch','start'].includes(command)?await backgroundService(repo):await openService(repo,{port,demo:command==='demo'});
+  const withPanel=['ui','config','codex'].includes(command)||!!values.ui;
   let closing=false;
-  const shutdown=async()=>{if(closing)return;closing=true;await engine.close();if(panel)await panel.close();};
-  process.once('SIGINT',()=>{void shutdown();});process.once('SIGTERM',()=>{void shutdown();});
+  const shutdown=async()=>{if(closing)return;closing=true;await service.close();};
+  const signal=()=>{void shutdown();};
+  process.once('SIGINT',signal);process.once('SIGTERM',signal);
+  function log(event:Event){
+    if(values.json){console.log(JSON.stringify(event));return;}
+    if(['provider.log','provider.usage'].includes(event.type))return;
+    console.log(`${event.time.slice(11,19)} ${event.role.toUpperCase()}${event.taskId?' ['+event.taskId+']':''}  ${event.message}`);
+  }
   try{
-    if(command==='ui'||values.ui){const port=values.port===undefined?0:Number(values.port);if(!Number.isInteger(port)||port<0||port>65535)throw new Error('Puerto inválido');panel=await startServer(engine,{port,demo:command==='demo'});print('Panel local: '+panel.url);print('Proyecto: '+repo);}
-    if(command==='status'){const data=positionals[1]?engine.store.get(positionals[1]):engine.store.list();print(data);}
-    else if(command==='inspect'){if(!positionals[1])throw new Error('Falta run_id');print(await engine.diff(positionals[1],values.task));}
-    else if(command==='answer'){if(positionals.length<4)throw new Error('Uso: orquesta answer run_id task_id "respuesta"');await engine.answer(positionals[1],positionals[2],positionals.slice(3).join(' '));print('Respuesta guardada. Ejecutá orquesta resume '+positionals[1]);}
-    else if(command==='run'||command==='demo'||command==='resume'){
-      const run=command==='resume'?engine.store.get(positionals[1]??''):await engine.create(command==='demo'?'Implementar saludo y suma con consulta, revisión y pruebas.':positionals.slice(1).join(' '),command==='demo'?'demo':'live');
-      print('Run: '+run.id);const result=await engine.start(run.id);print(`Estado: ${result.status}\nRama: ${result.integrationBranch}\nProyecto: ${repo}`);if(!panel&&result.status!=='completed')process.exitCode=result.status==='waiting_user'?2:1;
-    }else if(command!=='ui')throw new Error('Comando desconocido. Ejecutá orquesta --help');
-    if(!panel)await shutdown();
+    if(command==='launch'){
+      if(!values['no-open'])await openBrowser(service.url).catch(error=>console.error(error.message));
+      print({panel_url:service.url,repo});await shutdown();return;
+    }
+    if(withPanel){
+      print('Panel: '+service.url);print('Proyecto: '+repo);
+      if(!values['no-open']&&!values.json)await openBrowser(service.url).catch(error=>console.error(error.message));
+    }
+    if(command==='codex'){
+      const config=loadConfig(repo);const binary=findBinary('codex',config.codexPath);if(!binary)throw new Error('No se encontró Codex. Revisá orquesta doctor.');
+      const entry=fileURLToPath(new URL('../bin/orquesta.mjs',import.meta.url));
+      const mcp=`mcp_servers.orquesta={command=${JSON.stringify(process.execPath)},args=[${JSON.stringify(entry)},"mcp"],enabled=true}`;
+      const call=binaryCommand(binary,[...(config.orchestratorProvider==='codex'?['--model',config.astraModel]:[]),'-c',mcp]);
+      await new Promise<void>((resolve,reject)=>{
+        const child=spawn(call.command,call.args,{cwd:repo,stdio:'inherit',windowsHide:true});
+        child.once('error',reject);child.once('exit',code=>{process.exitCode=code??1;resolve();});
+      });
+      await shutdown();return;
+    }
+    if(command==='status')print(positionals[1]?await service.request('/api/run?id='+encodeURIComponent(positionals[1])):(await service.request('/api/state')).runs);
+    if(command==='describe')print({...await service.request('/api/config'),combos:await service.request('/api/presets')});
+    if(command==='configure'){
+      if(!values.file)throw new Error('Usá configure --file ARCHIVO_JSON.');
+      print(await service.request('/api/config',{config:JSON.parse(readFileSync(values.file,'utf8'))}));
+    }
+    if(command==='preset'){
+      if(!values.name)print(await service.request('/api/presets'));
+      else print(await service.request('/api/presets',{name:values.name,makeDefault:!!values.default}));
+    }
+    if(command==='events')print(await service.request('/api/events?run='+encodeURIComponent(positionals[1]??'')+'&after='+(Number(values.after)||0)));
+    if(command==='stop'){print(await service.request('/api/stop',{}));await shutdown();return;}
+    if(command==='start'){
+      const payload=values.file?JSON.parse(readFileSync(values.file,'utf8')):{objective:positionals.slice(1).join(' ')};
+      const run=await service.request('/api/runs',payload);print({run_id:run.id,panel_url:service.url,repo});await shutdown();return;
+    }
+    if(command==='inspect'){
+      if(!positionals[1])throw new Error('Falta run_id.');
+      print((await service.request('/api/diff?run='+encodeURIComponent(positionals[1])+(values.task?'&task='+encodeURIComponent(values.task):''))).diff);
+    }
+    if(command==='pause')print(await service.request('/api/pause',{}));
+    if(command==='answer'){
+      if(positionals.length<4)throw new Error('Uso: orquesta answer run_id task_id "respuesta"');
+      print(await service.request('/api/answer',{id:positionals[1],taskId:positionals[2],answer:positionals.slice(3).join(' ')}));
+    }
+    if(['run','demo','resume'].includes(command)){
+      const result=command==='resume'?await service.request('/api/resume',{id:positionals[1]}):await service.request('/api/runs',{objective:command==='demo'?'Implementar saludo y suma con consulta, revisión y pruebas.':positionals.slice(1).join(' ')});
+      print('Run: '+result.id);let after=0;
+      while(!closing){
+        const events=await service.request<Event[]>('/api/events?run='+encodeURIComponent(result.id)+'&after='+after);
+        for(const event of events){log(event);after=Math.max(after,event.seq??0);}
+        const run=await service.request<Run>('/api/run?id='+encodeURIComponent(result.id));
+        if(!['created','running'].includes(run.status)){
+          print(`Estado: ${run.status}\nRama: ${run.integrationBranch}`);
+          if(run.status!=='completed')process.exitCode=run.status==='waiting_user'?2:1;
+          break;
+        }
+        await new Promise(resolve=>setTimeout(resolve,300));
+      }
+    }else if(service.engine&&withPanel){service.engine.on('event',log);}
+    if(!withPanel||!service.owned)await shutdown();
   }catch(error){await shutdown();throw error;}
 }

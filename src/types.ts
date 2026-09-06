@@ -15,6 +15,7 @@ export interface Task extends TaskSpec {
   pendingQuestion?: string; error?: string;
 }
 export interface Run {
+  config?: Config;
   id: string; repo: string; objective: string; mode: 'live' | 'demo'; status: RunStatus;
   createdAt: string; updatedAt: string; base: string; integration: string; integrationBranch: string;
   tasks: Task[]; decisions: Decision[]; checks: CheckResult[]; calls: number; summary: string;
@@ -25,6 +26,8 @@ export interface Event {
   taskId?: string; data?: unknown;
 }
 export interface Config {
+  orchestratorProvider?: 'codex'|'claude'; implementerProvider?: 'codex'|'claude';
+  instructions?: string; setupCommands?: Check[];
   version: 1; astraModel: string; opusModel: string; codexPath?: string; claudePath?: string;
   workers: number; maxCorrections: number; maxQuestions: number; maxCalls: number;
   timeoutMs: number; maxContextBytes: number; qaRoot: string; qaCommand: string[]; checks: Check[];
